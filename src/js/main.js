@@ -19,4 +19,4 @@ import 'whatwg-fetch';
 
 ***********/
 import './../blocks/custom/custom.js';
-import './../blocks/Main.js';
+import './../blocks/index.js';

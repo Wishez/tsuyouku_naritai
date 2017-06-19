@@ -14,7 +14,6 @@ $(function() {
   // $('#main').fadeIn('slow');
   // $('footer').fadeIn('slow');
 
-  $(document).on('click', '#openMenuButton', openMenu);
 
   $(document).on('click', '.not-follow', openUrlInNewWindow);
 

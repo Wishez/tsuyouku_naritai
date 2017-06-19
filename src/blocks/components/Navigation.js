@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
 import classNames from 'classnames';
+import { Icon } from 'semantic-ui-react';
 
 export default class Navigation extends Component {
   constructor(props) {

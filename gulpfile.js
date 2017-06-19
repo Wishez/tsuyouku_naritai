@@ -39,36 +39,18 @@ const hbsfy = require('hbsfy').configure({
 const settings = {
   src: './src',
   build: './public'
-}, 
-      scssPathes = ['node_modules/susy/sass', 
-                    'node_modules/breakpoint-sass/stylesheets',
-                   'node_modules/bootstrap-sass/assets/stylesheets',
-                   'node_modules/font-awesome-sass/assets/stylesheets/'];
+};
+const scssPathes = [
+  'node_modules/susy/sass', 
+  'node_modules/breakpoint-sass/stylesheets',
+  'node_modules/bootstrap-sass/assets/stylesheets',
+  'node_modules/font-awesome-sass/assets/stylesheets/'
+];
 
 
 /* ----------------- */
 /* Static files
 /* ----------------- */
-
-gulp.task('bundle', ['js', 'scss', 'images', 'html', 'fonts', 'manifest'], () => {
-  browserSync.init({
-    server: {
-      baseDir: settings.build
-    },
-    open: false,
-    port: 9000,
-    reloadDelay: 2200
-  });
-
-  gulp.watch(settings.src + '/**/*.scss', ['scss']).on('change', browserSync.reload);
-  gulp.watch(settings.src + '/img/**/*.*', ['images']).on('change', browserSync.reload);
-  gulp.watch(settings.src + '/**/*.pug', ['html']).on('change', browserSync.reload);
-  gulp.watch(settings.src + '/**/*.js', ['js']).on('change', browserSync.reload);
-  gulp.watch('./**/*', ['manifest']).on('change', browserSync.reload);
-
-});
-
-
 /* ----------------- */
 /* Scripts
 /* ----------------- */
@@ -234,6 +216,30 @@ gulp.task('clean', function () {
 /* ----------------- */
 /* Predefined
 /* ----------------- */
+gulp.task('bundle', ['js', 'scss', 'images', 'html', 'fonts']);
 
-gulp.task('start', ['bundle']);  // development
-gulp.task('deploy', ['html', 'css', 'jsmin', 'images', 'fonts']);  // production
+gulp.task('start', ['bundle'], () => {
+    browserSync.init({
+    server: {
+      baseDir: settings.build
+    },
+    open: false,
+    port: 9000,
+    reloadDelay: 2200
+  });
+
+  gulp.watch(settings.src + '/**/*.scss', ['scss']).on('change', browserSync.reload);
+  gulp.watch(settings.src + '/img/**/*.*', ['images']).on('change', browserSync.reload);
+  gulp.watch(settings.src + '/**/*.pug', ['html']).on('change', browserSync.reload);
+  gulp.watch(settings.src + '/**/*.js', ['js']).on('change', browserSync.reload);
+  //gulp.watch('./**/*', []).on('change', browserSync.reload);
+});  // development
+gulp.task('deploy', ['html', 'css', 'jsmin', 'images', 'fonts', 'manifest'], () => {
+  process.stdout.write("Setting NODE_ENV to 'production'" + "\n");
+  process.env.NODE_ENV = 'production';
+  if (process.env.NODE_ENV != 'production') {
+    throw new Error("Failed to set NODE_ENV to production!!!!");
+  } else {
+    process.stdout.write("Successfully set NODE_ENV to production" + "\n");
+  }
+});  // production

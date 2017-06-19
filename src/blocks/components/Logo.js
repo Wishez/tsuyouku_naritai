@@ -8,7 +8,7 @@ export default class Header extends Component {
            className='brand__refer' 
            href="#">
           <h1 className='brand__name'>  
-            some text here
+            強く、なりたい
           </h1>
         </a>
       </div>
