@@ -21,9 +21,9 @@ export const selectOrders = orders => ({
 const testSelectOrders = () => {
 	const stateAfter = {
 		type: SELECT_ORDERS,
-		orders: 'composedEvents'		
+		orders: 'events'		
 	};
-	expect(selectOrders('composedEvents')).toEqual(stateAfter);
+	expect(selectOrders('events')).toEqual(stateAfter);
 	console.log('testSelectOrders=>true');
 }
 
@@ -38,13 +38,12 @@ export const invalidateOrders = orders => ({
 const testInvalidateOrders = () => {
 	const stateAfter = {
 		type: SELECT_ORDERS,
-		orders: 'composedEvents'		
+		orders: 'events'		
 	};
-	expect(invalidateOrders('composedEvents')).toEqual(stateAfter);
+	expect(invalidateOrders('events')).toEqual(stateAfter);
 	console.log('testInvalidateOrders=>true');
 }
-testInvalidateOrders();
-testSelectOrders();
+
 export const requestOrders = orders => ({
 	type: REQUEST_ORDERS,
 	orders
@@ -56,9 +55,6 @@ export const receiveOrders = (orders, orderEntities, json) => ({
 	orders,
 	orderEntities,
 	items: json.reduce((accumulatedData, data) => {
-		console.log(json, 'mutabled received data');
-		console.log(data, 'data(one object)');
-		console.log(accumulatedData, 'accumulatedData');
 		accumulatedData[data.id] = data;
 		return accumulatedData;
 	}, {}),
@@ -69,6 +65,7 @@ const fetchEntities = (orders, entities) => dispatch => {
 	// Показываем загрузку. 
 	// requestOrders компонует действие, с определённым типом заказов
 	// сменяя в обработчие закзов(reudcer-e) состояние этих заказов
+	dispatch(selectOrders(orders));
 	dispatch(requestOrders(orders));
 	// Запрашиваем нужные сущности.
 	return fetch(`/api/v0/${entities}/`)
@@ -105,43 +102,10 @@ const shouldFetchEntities = (state, orders, entities) => {
 export const fetchEntitiesIfNeeded = (orders, entities) => (dispatch, getState) => {
 	// Делаем проверку существующих или нет сущностей в состояние.
 	// Запрашиваем то, что нужно.
-	if (shouldFetchEntities(getState(), orders, entities))
+	if (shouldFetchEntities(getState(), orders, entities)) {
 		return dispatch(fetchEntities(orders, entities));
+	} else　{
+		// Возвращает управление компоненту, чтобы сменить значение в фильтре заказов.
+		return false;
+	}
 };
-
-// export const SELECT_SUBREDDIT = 'SELECT_SUBREDDIT'
-
-// export function selectSubreddit(subreddit) {
-//   return {
-//     type: SELECT_SUBREDDIT,
-//     subreddit
-//   }
-// }
-// export const INVALIDATE_SUBREDDIT = 'INVALIDATE_SUBREDDIT'
-
-// export function invalidateSubreddit(subreddit) {
-//   return {
-//     type: INVALIDATE_SUBREDDIT,
-//     subreddit
-//   }
-// }
-
-// export const REQUEST_POSTS = 'REQUEST_POSTS'
-
-// function requestPosts(subreddit) {
-//   return {
-//     type: REQUEST_POSTS,
-//     subreddit
-//   }
-// }
-
-// export const RECEIVE_POSTS = 'RECEIVE_POSTS'
-
-// function receivePosts(subreddit, json) {
-//   return {
-//     type: RECEIVE_POSTS,
-//     subreddit,
-//     posts: json.data.children.map(child => child.data),
-//     receivedAt: Date.now()
-//   }
-// }

@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import Orders from './../components/Orders';
-import { selectOrders } from './../actions/OrderActions.js';
+import { selectOrders, fetchEntitiesIfNeeded } from './../actions/OrderActions.js';
 
 class OrdersContainer extends Component {
 	static PropTypes = {
@@ -19,7 +19,13 @@ class OrdersContainer extends Component {
 
 	};
 
-	handleChangeOrders = orders => {
+	selectEntitiesInOrders = (orders, entities) => {
+		const { dispatch }  = this.props;
+		// console.log(this.props.selectedOrders);
+		dispatch(fetchEntitiesIfNeeded(orders, entities));		
+	};
+	selectNeededOrders = orders => {
+
 		const { dispatch }  = this.props;
 
 		dispatch(selectOrders(orders));
@@ -27,7 +33,11 @@ class OrdersContainer extends Component {
 
 	render () {
 		return (
-			<Orders {...this.props} />
+			<Orders {...this.props}
+				selectEntitiesInOrders={this.selectEntitiesInOrders}
+				fetchEntities={this.fetchEntities}
+				selectNeededOrders={this.selectNeededOrders}
+			/>
 		);	
 	}
 }
@@ -57,7 +67,7 @@ const mapStateToProps = state => {
 			halls: {}
 		}
 	}
-
+	console.log(state);
 	return {
 		selectedOrders,
 		selectedEntities,

@@ -93682,9 +93682,9 @@ var selectOrders = exports.selectOrders = function selectOrders(orders) {
 var testSelectOrders = function testSelectOrders() {
 	var stateAfter = {
 		type: _actionTypes.SELECT_ORDERS,
-		orders: 'composedEvents'
+		orders: 'events'
 	};
-	(0, _expect2.default)(selectOrders('composedEvents')).toEqual(stateAfter);
+	(0, _expect2.default)(selectOrders('events')).toEqual(stateAfter);
 	console.log('testSelectOrders=>true');
 };
 
@@ -93701,13 +93701,12 @@ var invalidateOrders = exports.invalidateOrders = function invalidateOrders(orde
 var testInvalidateOrders = function testInvalidateOrders() {
 	var stateAfter = {
 		type: _actionTypes.SELECT_ORDERS,
-		orders: 'composedEvents'
+		orders: 'events'
 	};
-	(0, _expect2.default)(invalidateOrders('composedEvents')).toEqual(stateAfter);
+	(0, _expect2.default)(invalidateOrders('events')).toEqual(stateAfter);
 	console.log('testInvalidateOrders=>true');
 };
-testInvalidateOrders();
-testSelectOrders();
+
 var requestOrders = exports.requestOrders = function requestOrders(orders) {
 	return {
 		type: _actionTypes.REQUEST_ORDERS,
@@ -93722,9 +93721,6 @@ var receiveOrders = exports.receiveOrders = function receiveOrders(orders, order
 		orders: orders,
 		orderEntities: orderEntities,
 		items: json.reduce(function (accumulatedData, data) {
-			console.log(json, 'mutabled received data');
-			console.log(data, 'data(one object)');
-			console.log(accumulatedData, 'accumulatedData');
 			accumulatedData[data.id] = data;
 			return accumulatedData;
 		}, {}),
@@ -93737,6 +93733,7 @@ var fetchEntities = function fetchEntities(orders, entities) {
 		// Показываем загрузку. 
 		// requestOrders компонует действие, с определённым типом заказов
 		// сменяя в обработчие закзов(reudcer-e) состояние этих заказов
+		dispatch(selectOrders(orders));
 		dispatch(requestOrders(orders));
 		// Запрашиваем нужные сущности.
 		return fetch('/api/v0/' + entities + '/').then(function (respond) {
@@ -93772,46 +93769,14 @@ var fetchEntitiesIfNeeded = exports.fetchEntitiesIfNeeded = function fetchEntiti
 	return function (dispatch, getState) {
 		// Делаем проверку существующих или нет сущностей в состояние.
 		// Запрашиваем то, что нужно.
-		if (shouldFetchEntities(getState(), orders, entities)) return dispatch(fetchEntities(orders, entities));
+		if (shouldFetchEntities(getState(), orders, entities)) {
+			return dispatch(fetchEntities(orders, entities));
+		} else {
+			// Возвращает управление компоненту, чтобы сменить значение в фильтре заказов.
+			return false;
+		}
 	};
 };
-
-// export const SELECT_SUBREDDIT = 'SELECT_SUBREDDIT'
-
-// export function selectSubreddit(subreddit) {
-//   return {
-//     type: SELECT_SUBREDDIT,
-//     subreddit
-//   }
-// }
-// export const INVALIDATE_SUBREDDIT = 'INVALIDATE_SUBREDDIT'
-
-// export function invalidateSubreddit(subreddit) {
-//   return {
-//     type: INVALIDATE_SUBREDDIT,
-//     subreddit
-//   }
-// }
-
-// export const REQUEST_POSTS = 'REQUEST_POSTS'
-
-// function requestPosts(subreddit) {
-//   return {
-//     type: REQUEST_POSTS,
-//     subreddit
-//   }
-// }
-
-// export const RECEIVE_POSTS = 'RECEIVE_POSTS'
-
-// function receivePosts(subreddit, json) {
-//   return {
-//     type: RECEIVE_POSTS,
-//     subreddit,
-//     posts: json.data.children.map(child => child.data),
-//     receivedAt: Date.now()
-//   }
-// }
 
 },{"./../constants/actionTypes.js":1353,"expect":422,"redux-actions":1039}],1349:[function(require,module,exports){
 'use strict';
@@ -94116,6 +94081,8 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _react = require('react');
 
 var _react2 = _interopRequireDefault(_react);
@@ -94124,9 +94091,15 @@ var _reactFadeIn = require('react-fade-in');
 
 var _reactFadeIn2 = _interopRequireDefault(_reactFadeIn);
 
-var _reactRouterDom = require('react-router-dom');
+var _semanticUiReact = require('semantic-ui-react');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+// import { Link } from 'react-router-dom';
+
 
 // Events
 // completedEvents: object
@@ -94154,44 +94127,128 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // CustomersList is list with cutomers. Differance is in checkboxes(later)
 //   entities: Array
 //   onEntityClick: (id: number)
-var FilterLink = function FilterLink(_ref) {
-	var dispatch = _ref.dispatch,
-	    handleChangeOrders = _ref.handleChangeOrders,
-	    neededOrders = _ref.neededOrders,
-	    text = _ref.text;
+
+var ListEntities = function ListEntities(_ref) {
+	var rest = _objectWithoutProperties(_ref, []),
+	    entities = _ref.entities,
+	    name = _ref.name;
+
+	// name - свойство объекта, которое будет отображаться в списке.
+	var listEntities = [].concat(_toConsumableArray(entities)).reduce(function (arrayItems, entity) {
+		var entityOption = {
+			value: entity.id,
+			key: entity.id,
+			text: entity[name]
+		};
+		console.log(entity[name]);
+		arrayItems.push(entityOption);
+
+		return arrayItems;
+	}, []);
+
+	return _react2.default.createElement(_semanticUiReact.Dropdown, _extends({}, rest, {
+		fluid: true, multiple: true, search: true, selection: true,
+		options: listEntities
+	}));
+};
+var SelectOrdersButton = function SelectOrdersButton(_ref2) {
+	var selectEntitiesInOrders = _ref2.selectEntitiesInOrders,
+	    orders = _ref2.orders,
+	    isFetching = _ref2.isFetching,
+	    entities = _ref2.entities,
+	    selectNeededOrders = _ref2.selectNeededOrders,
+	    rest = _objectWithoutProperties(_ref2, ['selectEntitiesInOrders', 'orders', 'isFetching', 'entities', 'selectNeededOrders']);
+
+	return _react2.default.createElement(_semanticUiReact.Button, _extends({}, rest, {
+		loading: isFetching,
+		onClick: function onClick() {
+			selectEntitiesInOrders(orders, entities);
+			selectNeededOrders(orders);
+		}
+	}));
+};
+
+var ListSelectOrdersButtons = function ListSelectOrdersButtons(_ref3) {
+	var rest = _objectWithoutProperties(_ref3, []);
+
 	return _react2.default.createElement(
-		_reactRouterDom.Link,
-		{ to: '/orders/' + neededOrders,
-			onClick: function onClick() {
-				handleChangeOrders(neededOrders);
-			} },
-		text
+		'div',
+		null,
+		_react2.default.createElement(SelectOrdersButton, _extends({ content: '\u0417\u0430\u043A\u0430\u0437\u0430\u043D\u043D\u044B\u0435 \u043C\u0435\u0440\u043E\u043F\u0440\u0438\u044F\u0442\u0438\u044F',
+			orders: 'events',
+			color: 'grey',
+			size: 'medium',
+			entities: 'events'
+		}, rest)),
+		_react2.default.createElement(SelectOrdersButton, _extends({ content: '\u0417\u0430\u043A\u0430\u0437\u0430\u043D\u043D\u044B\u0435 \u0442\u0443\u0440-\u043F\u0443\u0442\u0435\u0448\u0435\u0441\u0442\u0432\u0438\u044F',
+			orders: 'adventures',
+			color: 'grey',
+			size: 'medium',
+			entities: 'adventures'
+		}, rest))
 	);
 };
 
-var Orders = function Orders(_ref2) {
-	var selectedOrders = _ref2.selectedOrders,
-	    selectedEntities = _ref2.selectedEntities,
-	    entities = _ref2.entities,
-	    isFetching = _ref2.isFetching,
-	    lastUpdated = _ref2.lastUpdated,
-	    dispatch = _ref2.dispatch,
-	    handleChangeOrders = _ref2.handleChangeOrders;
+var Orders = function Orders(_ref4) {
+	var selectedOrders = _ref4.selectedOrders,
+	    selectedEntities = _ref4.selectedEntities,
+	    entities = _ref4.entities,
+	    isFetching = _ref4.isFetching,
+	    lastUpdated = _ref4.lastUpdated,
+	    dispatch = _ref4.dispatch,
+	    selectEntitiesInOrders = _ref4.selectEntitiesInOrders,
+	    selectNeededOrders = _ref4.selectNeededOrders;
 
-	console.log(entities);
-	// console.log(lastUpdated);
-	// console.log(selectedOrders);
-	// console.log(selectedEntities);
+	console.log(selectedOrders);
+	console.log(entities[selectedOrders]);
+
+	var listOrders = {};
+	// const arrEntities = ;
+	switch (selectedOrders) {
+		case 'events':
+			listOrders = _react2.default.createElement(ListEntities, { name: 'event_name',
+				entities: _extends({}, entities[selectedOrders]),
+				placeholder: '\u0412\u044B\u0431\u0435\u0440\u0435\u0442\u0435 \u043C\u0435\u0440\u043E\u043F\u0440\u0438\u044F\u0442\u0438\u0435'
+			});
+			break;
+		case 'adventures':
+			listOrders = _react2.default.createElement(ListEntities, { name: 'adventure_number',
+				entities: _extends({}, entities[selectedOrders]),
+				placeholder: '\u0412\u044B\u0431\u0435\u0440\u0435\u0442\u0435 \u0442\u0443\u0440-\u043F\u0443\u0442\u0435\u0448\u0435\u0441\u0442\u0432\u0438\u0435'
+			});
+			break;
+		default:
+			break;
+	}
+
 	return _react2.default.createElement(
 		_reactFadeIn2.default,
 		null,
-		'Order\'s section!'
+		_react2.default.createElement(
+			'div',
+			null,
+			_react2.default.createElement(
+				'small',
+				null,
+				'\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0435 \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435:\xA0',
+				new Date(Date.now()).toLocaleDateString('ru-RU', {
+					hour: 'numeric',
+					minute: 'numeric',
+					second: 'numeric'
+				})
+			)
+		),
+		_react2.default.createElement(ListSelectOrdersButtons, { selectEntitiesInOrders: selectEntitiesInOrders,
+			isFetching: isFetching,
+			selectNeededOrders: selectNeededOrders
+		}),
+		listOrders
 	);
 };
 
 exports.default = Orders;
 
-},{"react":1030,"react-fade-in":964,"react-router-dom":991}],1353:[function(require,module,exports){
+},{"react":1030,"react-fade-in":964,"semantic-ui-react":1235}],1353:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94579,6 +94636,8 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = require('react');
@@ -94621,7 +94680,12 @@ var OrdersContainer = function (_Component) {
 			args[_key] = arguments[_key];
 		}
 
-		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = OrdersContainer.__proto__ || Object.getPrototypeOf(OrdersContainer)).call.apply(_ref, [this].concat(args))), _this), _this.handleChangeEntity = function (entity, id) {}, _this.handleChangeOrders = function (orders) {
+		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = OrdersContainer.__proto__ || Object.getPrototypeOf(OrdersContainer)).call.apply(_ref, [this].concat(args))), _this), _this.handleChangeEntity = function (entity, id) {}, _this.selectEntitiesInOrders = function (orders, entities) {
+			var dispatch = _this.props.dispatch;
+			// console.log(this.props.selectedOrders);
+
+			dispatch((0, _OrderActions.fetchEntitiesIfNeeded)(orders, entities));
+		}, _this.selectNeededOrders = function (orders) {
 			var dispatch = _this.props.dispatch;
 
 
@@ -94632,7 +94696,11 @@ var OrdersContainer = function (_Component) {
 	_createClass(OrdersContainer, [{
 		key: 'render',
 		value: function render() {
-			return _react2.default.createElement(_Orders2.default, this.props);
+			return _react2.default.createElement(_Orders2.default, _extends({}, this.props, {
+				selectEntitiesInOrders: this.selectEntitiesInOrders,
+				fetchEntities: this.fetchEntities,
+				selectNeededOrders: this.selectNeededOrders
+			}));
 		}
 	}]);
 
@@ -94673,6 +94741,7 @@ var mapStateToProps = function mapStateToProps(state) {
 	    lastUpdated = _ref2.lastUpdated,
 	    entities = _ref2.entities;
 
+	console.log(state);
 	return {
 		selectedOrders: selectedOrders,
 		selectedEntities: selectedEntities,
@@ -94862,13 +94931,11 @@ var orders = exports.orders = function orders() {
 	}
 };
 // Фильтер для смены заказов.
-// 4 type of orders
-// 1: composedEvents
-// 2: composedAdvantures
-// 3: buildingEvents
-// 4: buildingAdvantures
+// 2 types of orders
+// 1: events
+// 2: adventures
 var selectedOrders = exports.selectedOrders = function selectedOrders() {
-	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'composedEvents';
+	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'events';
 	var action = arguments[1];
 
 	switch (action.type) {

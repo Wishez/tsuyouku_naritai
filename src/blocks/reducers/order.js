@@ -56,13 +56,11 @@ export const orders = (
 	}
 };
 // Фильтер для смены заказов.
-// 4 type of orders
-// 1: composedEvents
-// 2: composedAdvantures
-// 3: buildingEvents
-// 4: buildingAdvantures
+// 2 types of orders
+// 1: events
+// 2: adventures
 export const selectedOrders = (
-		state = 'composedEvents',
+		state = 'events',
 		action
 ) => {
 	switch(action.type) {
