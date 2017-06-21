@@ -5,7 +5,6 @@ import Navigation from './../components/Navigation';
 const Header = () => (
   <header className='header'>
       <div className='container'>
-        <Logo />
         <Navigation />
       </div>
   </header>

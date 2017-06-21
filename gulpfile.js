@@ -218,7 +218,7 @@ gulp.task('clean', function () {
 /* ----------------- */
 gulp.task('bundle', ['js', 'scss', 'images', 'html', 'fonts']);
 
-gulp.task('start', ['bundle'], () => {
+gulp.task('default', ['bundle'], () => {
     browserSync.init({
     server: {
       baseDir: settings.build

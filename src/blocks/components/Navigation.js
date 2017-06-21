@@ -10,17 +10,17 @@ export default class Navigation extends Component {
     this.state = {
         isOpen: false,
         activAbout: false,
-        activeSecond: false,
-        activeThird: false,
-        activeFourth: false
+        activeEvents: false,
+        activeAdvantures: false,
+        registerVisa: false
     };
 
     this.getActiveClass = this.getActiveClass.bind(this);
     this.openMenu = this.openMenu.bind(this);
-    this.changeActiveSecond = this.changeActiveSecond.bind(this);
-    this.changeActiveFirst = this.changeActiveFirst.bind(this);
-    this.changeActiveThird = this.changeActiveThird.bind(this);
-    this.changeActiveFourth = this.changeActiveFourth.bind(this);
+    this.changeActiveEvents = this.changeActiveEvents.bind(this);
+    this.changeActiveMain = this.changeActiveMain.bind(this);
+    this.changeActiveAdvantures = this.changeActiveAdvantures.bind(this);
+    this.changeRegisterVisa = this.changeRegisterVisa.bind(this);
     this.cleanActiveState = this.cleanActiveState.bind(this);
   }
   
@@ -38,45 +38,45 @@ export default class Navigation extends Component {
 
   cleanActiveState() {
     this.setState({
-      activeFirst: false,
-      activeSecond: false,
-      activeThird: false,
-      activeFourth: false
+      activeMain: false,
+      activeEvents: false,
+      activeAdvantures: false,
+      registerVisa: false
     });
 
   }
 
-  changeActiveFirst() {
+  changeActiveMain() {
     this.cleanActiveState();
 
-    this.setState({activeFirst: true});
+    this.setState({activeMain: true});
   }
-  changeActiveSecond() {
+  changeActiveEvents() {
     this.cleanActiveState();
 
-    this.setState({activeSecond: true});
+    this.setState({activeEvents: true});
   }
-  changeActiveThird() {
+  changeActiveAdvantures() {
     this.cleanActiveState();
 
-    this.setState({activeThird: true});
+    this.setState({activeAdvantures: true});
 
   }
-  changeActiveFourth() {
+  changeRegisterVisa() {
     this.cleanActiveState();
 
-    this.setState({activeFourth: true});
+    this.setState({registerVisa: true});
 
   }
 
   componentDidMount() {
-    this.changeActiveFirst();
+    this.changeActiveMain();
   }
 
    
   render() {
 
-    const { activeFirst, activeSecond, activeThird, activeFourth } = this.state;
+    const { activeMain, activeEvents, activeAdvantures, registerVisa } = this.state;
 
     return (
         <nav className='navigaton'>
@@ -90,32 +90,32 @@ export default class Navigation extends Component {
           </button>
           <ul className='navList'
               id='navList'>
-            <li className={this.getActiveClass(activeFirst)}>
+            <li className={this.getActiveClass(activeMain)}>
               <Link to='/'
                 className='navItem__refer'
-                onClick={this.changeActiveFirst}>
-                Fisrt nav item
+                onClick={this.changeActiveMain}>
+                Главная
               </Link>
             </li>
-            <li className={this.getActiveClass(activeSecond)}>
-              <Link to='/second'
+            <li className={this.getActiveClass(activeEvents)}>
+              <Link to='/orders'
                 className='navItem__refer'
-                onClick={this.changeActiveSecond}>
-                Second nav item
+                onClick={this.changeActiveEvents}>
+                Заказы
               </Link>
             </li>
-            <li className={this.getActiveClass(activeThird)}>
-              <Link to='/third'
+            <li className={this.getActiveClass(activeAdvantures)}>
+              <Link to='/adventures'
                 className='navItem__refer'
-                onClick={this.changeActiveThird}>
-                Third nav item
+                onClick={this.changeActiveAdvantures}>
+                Не Путешествия
               </Link>
             </li>
-            <li className={this.getActiveClass(activeFourth)}>
-              <Link to='/fourth' 
+            <li className={this.getActiveClass(registerVisa)}>
+              <Link to='/register_visa' 
                 className='navItem__refer'
-                onClick={this.changeActiveFourth}>
-                Fourth nav item
+                onClick={this.changeRegisterVisa}>
+                Оформить визу
               </Link>
             </li>
           </ul>

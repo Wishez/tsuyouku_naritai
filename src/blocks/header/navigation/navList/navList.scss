@@ -1,5 +1,6 @@
 .navList {
-  
+  display: inline-flex;
+  text-align: center;
   width: span(12);
   @include breakpoint($sm) {
     font-size: (20em / 16);

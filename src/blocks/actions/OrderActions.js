@@ -1,15 +1,50 @@
-import { RECEIVE_ORDERS, SELECT_ORDERS, REQUEST_ORDERS } from './../constants/actionTypes.js';
+import { RECEIVE_ORDERS, REQUEST_ORDERS, 
+	INVALIDATE_ORDERS, SELECT_ENTITY, SELECT_ORDERS } from './../constants/actionTypes.js';
+import { createAction } from 'redux-actions';
+import expect from 'expect';
 
-export const ordersOrders = orders => ({ 
+
+// export const selectOrders = createAction(
+// 	SELECT_ORDERS,
+// 	orders => orders
+// );
+export const selectEntity = (entity, index) => ({
+	type: SELECT_ENTITY,
+	entity,
+	id: index
+});
+export const selectOrders = orders => ({ 
 	type: SELECT_ORDERS,
 	orders
-})
+});
+
+const testSelectOrders = () => {
+	const stateAfter = {
+		type: SELECT_ORDERS,
+		orders: 'composedEvents'		
+	};
+	expect(selectOrders('composedEvents')).toEqual(stateAfter);
+	console.log('testSelectOrders=>true');
+}
 
 export const invalidateOrders = orders => ({ 
 	type: SELECT_ORDERS,
 	orders
-})
-
+});
+// export const invalidateOrders = createAction(
+// 	INVALIDATE_ORDERS,
+// 	orders => orders
+// );
+const testInvalidateOrders = () => {
+	const stateAfter = {
+		type: SELECT_ORDERS,
+		orders: 'composedEvents'		
+	};
+	expect(invalidateOrders('composedEvents')).toEqual(stateAfter);
+	console.log('testInvalidateOrders=>true');
+}
+testInvalidateOrders();
+testSelectOrders();
 export const requestOrders = orders => ({
 	type: REQUEST_ORDERS,
 	orders
@@ -20,9 +55,12 @@ export const receiveOrders = (orders, orderEntities, json) => ({
 	type: RECEIVE_ORDERS,
 	orders,
 	orderEntities,
-	items: json.reduce(accumulatedData, data => {
+	items: json.reduce((accumulatedData, data) => {
+		console.log(json, 'mutabled received data');
+		console.log(data, 'data(one object)');
+		console.log(accumulatedData, 'accumulatedData');
 		accumulatedData[data.id] = data;
-		return accumuletedData;
+		return accumulatedData;
 	}, {}),
 	receivedAt: Date.now()
 });
@@ -36,7 +74,10 @@ const fetchEntities = (orders, entities) => dispatch => {
 	return fetch(`/api/v0/${entities}/`)
 		.then(respond=>respond.json())
 		// Отправляем их через диспатчер к обработчику состояния
-		.then(json => recevieOrders(orders, entities, json)) 
+		.then(json => {
+			// if (json.length !== 0)
+				dispatch(receiveOrders(orders, entities, json))
+		}); 
 };
 
 
@@ -45,7 +86,7 @@ const shouldFetchEntities = (state, orders, entities) => {
 	const ordersType = state.ordersByData[orders];
 	// Также определённые сущности внутри типа заказа.
 	// Если типа заказа нет, то нужно получить его!
-	const stateEntities = ordersType ? false : ordersType.entities[entities];
+	const stateEntities = ordersType ? ordersType.entities[entities] :false;
 	// Если нет сущности внутри типа, получаем их.
 	if (!stateEntities) 
 		return true;
@@ -68,39 +109,39 @@ export const fetchEntitiesIfNeeded = (orders, entities) => (dispatch, getState) 
 		return dispatch(fetchEntities(orders, entities));
 };
 
-export const SELECT_SUBREDDIT = 'SELECT_SUBREDDIT'
+// export const SELECT_SUBREDDIT = 'SELECT_SUBREDDIT'
 
-export function selectSubreddit(subreddit) {
-  return {
-    type: SELECT_SUBREDDIT,
-    subreddit
-  }
-}
-export const INVALIDATE_SUBREDDIT = 'INVALIDATE_SUBREDDIT'
+// export function selectSubreddit(subreddit) {
+//   return {
+//     type: SELECT_SUBREDDIT,
+//     subreddit
+//   }
+// }
+// export const INVALIDATE_SUBREDDIT = 'INVALIDATE_SUBREDDIT'
 
-export function invalidateSubreddit(subreddit) {
-  return {
-    type: INVALIDATE_SUBREDDIT,
-    subreddit
-  }
-}
+// export function invalidateSubreddit(subreddit) {
+//   return {
+//     type: INVALIDATE_SUBREDDIT,
+//     subreddit
+//   }
+// }
 
-export const REQUEST_POSTS = 'REQUEST_POSTS'
+// export const REQUEST_POSTS = 'REQUEST_POSTS'
 
-function requestPosts(subreddit) {
-  return {
-    type: REQUEST_POSTS,
-    subreddit
-  }
-}
+// function requestPosts(subreddit) {
+//   return {
+//     type: REQUEST_POSTS,
+//     subreddit
+//   }
+// }
 
-export const RECEIVE_POSTS = 'RECEIVE_POSTS'
+// export const RECEIVE_POSTS = 'RECEIVE_POSTS'
 
-function receivePosts(subreddit, json) {
-  return {
-    type: RECEIVE_POSTS,
-    subreddit,
-    posts: json.data.children.map(child => child.data),
-    receivedAt: Date.now()
-  }
-}
+// function receivePosts(subreddit, json) {
+//   return {
+//     type: RECEIVE_POSTS,
+//     subreddit,
+//     posts: json.data.children.map(child => child.data),
+//     receivedAt: Date.now()
+//   }
+// }

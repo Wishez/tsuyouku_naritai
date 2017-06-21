@@ -51,6 +51,9 @@ button, a {
   cursor: pointer;
 }
 
+ul {
+  list-style: none;
+}
 a {
   color: $baseLinkColor;
   &:hover, &:visited, &:active, &:focus {
