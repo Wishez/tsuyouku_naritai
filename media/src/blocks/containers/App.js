@@ -8,7 +8,6 @@ import { withRouter } from 'react-router-dom';
 import { fetchEntitiesIfNeeded } from './../actions/OrderActions.js';  
 
 
-let entitiesCounter = 0;
 class App extends Component {
 	static PropTypes = {
 		selectedOrders: PropTypes.string.isRequired,
@@ -21,24 +20,23 @@ class App extends Component {
 
 	componentDidMount() {
 		const { entities, selectedOrders, dispatch } = this.props;
-
 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
 		
 	}
 
 	componentWillReceiveProps(nextProps) {
 		if (nextProps.selectedOrders !== this.props.selectedOrders){
-			const { entities, selectedOrders, dispatch } = this.props;
-			switch (nextProps.selectedOrders) {
-				case 'composedEvents':
-					dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
-				case 'componedAdvatures':
-					dispatch(fetchEntitiesIfNeeded(selectedOrders, 'adventures'));			
-					break;
-				default:
-					dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
-					break;
-			}
+			// const { entities, selectedOrders, dispatch } = this.props;
+			// switch (nextProps.selectedOrders) {
+			// 	case 'events':
+			// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
+			// 	case 'adventures':
+			// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'adventures'));			
+			// 		break;
+			// 	default:
+			// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
+			// 		break;
+			// }
 			
 		}
 

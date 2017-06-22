@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import FadeIn from 'react-fade-in';
 // import { Link } from 'react-router-dom';
 import { Dropdown, Button } from 'semantic-ui-react';
-
+import ListEntities from './ListEntities';
 // Events
 	// completedEvents: object
 	// customers: object
@@ -30,31 +30,7 @@ import { Dropdown, Button } from 'semantic-ui-react';
 //   entities: Array
 //   onEntityClick: (id: number)
 
-const ListEntities = ({
-	...rest,
-	entities,
-	name
-}) => {
-	// name - свойство объекта, которое будет отображаться в списке.
-	const listEntities = [...entities].reduce((arrayItems, entity) => {
-		const entityOption = {
-			value: entity.id,
-			key: entity.id,
-			text: entity[name]
-		};
-		console.log(entity[name]);
-		arrayItems.push(entityOption)
 
-		return arrayItems;
-	}, []);
-
-	return (
-		<Dropdown {...rest} 
-			fluid multiple search selection
-			options={listEntities}
-		/>
-	);
-};
 const SelectOrdersButton = ({
  	selectEntitiesInOrders,
  	orders,
@@ -103,10 +79,9 @@ const Orders = ({
 		selectNeededOrders
 }) => {
 	console.log(selectedOrders);
-	console.log(entities[selectedOrders]);
+	console.log({...entities[selectedOrders]},'test spread entities');
 
 	let listOrders = {};
-	// const arrEntities = ;
 	switch (selectedOrders) {
 		case 'events':
 			listOrders =  <ListEntities name='event_name'
@@ -130,7 +105,7 @@ const Orders = ({
 				<small>
 					Последнее обновление:&nbsp;
 					{new Date(Date.now()).toLocaleDateString('ru-RU', { 
-						hour:'numeric', 
+						hour: 'numeric', 
 						minute: 'numeric', 
 						second: 'numeric'
 					})}

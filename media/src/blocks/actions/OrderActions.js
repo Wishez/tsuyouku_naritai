@@ -55,8 +55,10 @@ export const receiveOrders = (orders, orderEntities, json) => ({
 	orders,
 	orderEntities,
 	items: json.reduce((accumulatedData, data) => {
-		accumulatedData[data.id] = data;
-		return accumulatedData;
+		return {
+			...accumulatedData,
+			[data.id]: data
+		};
 	}, {}),
 	receivedAt: Date.now()
 });

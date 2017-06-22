@@ -93651,6 +93651,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.fetchEntitiesIfNeeded = exports.receiveOrders = exports.requestOrders = exports.invalidateOrders = exports.selectOrders = exports.selectEntity = undefined;
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _actionTypes = require('./../constants/actionTypes.js');
 
 var _reduxActions = require('redux-actions');
@@ -93660,6 +93662,8 @@ var _expect = require('expect');
 var _expect2 = _interopRequireDefault(_expect);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 // export const selectOrders = createAction(
 // 	SELECT_ORDERS,
@@ -93721,8 +93725,7 @@ var receiveOrders = exports.receiveOrders = function receiveOrders(orders, order
 		orders: orders,
 		orderEntities: orderEntities,
 		items: json.reduce(function (accumulatedData, data) {
-			accumulatedData[data.id] = data;
-			return accumulatedData;
+			return _extends({}, accumulatedData, _defineProperty({}, data.id, data));
 		}, {}),
 		receivedAt: Date.now()
 	};
@@ -93778,7 +93781,54 @@ var fetchEntitiesIfNeeded = exports.fetchEntitiesIfNeeded = function fetchEntiti
 	};
 };
 
-},{"./../constants/actionTypes.js":1353,"expect":422,"redux-actions":1039}],1349:[function(require,module,exports){
+},{"./../constants/actionTypes.js":1354,"expect":422,"redux-actions":1039}],1349:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _semanticUiReact = require('semantic-ui-react');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+var ListEntities = function ListEntities(_ref) {
+	var entities = _ref.entities,
+	    name = _ref.name,
+	    rest = _objectWithoutProperties(_ref, ['entities', 'name']);
+
+	// Why does {...rest} not work?s
+	// name - свойство объекта, которое будет отображаться в списке.
+
+
+	var listEntities = Object.assign([], entities).reduce(function (arrayItems, entity) {
+
+		return [].concat(_toConsumableArray(arrayItems), [{
+			value: entity.id,
+			key: entity.id,
+			text: entity[name]
+		}]);
+	}, []);
+
+	return _react2.default.createElement(_semanticUiReact.Dropdown, _extends({}, rest, {
+		fluid: true, multiple: true, search: true, selection: true,
+		options: listEntities
+	}));
+};
+
+exports.default = ListEntities;
+
+},{"react":1030,"semantic-ui-react":1235}],1350:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -93835,7 +93885,7 @@ var Header = function (_Component) {
 
 exports.default = Header;
 
-},{"react":1030}],1350:[function(require,module,exports){
+},{"react":1030}],1351:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94038,7 +94088,7 @@ var Navigation = function (_Component) {
 
 exports.default = Navigation;
 
-},{"classnames":26,"react":1030,"react-router-dom":991,"semantic-ui-react":1235}],1351:[function(require,module,exports){
+},{"classnames":26,"react":1030,"react-router-dom":991,"semantic-ui-react":1235}],1352:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94074,7 +94124,7 @@ var NotFound = function NotFound() {
 
 exports.default = NotFound;
 
-},{"react":1030}],1352:[function(require,module,exports){
+},{"react":1030}],1353:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94093,9 +94143,11 @@ var _reactFadeIn2 = _interopRequireDefault(_reactFadeIn);
 
 var _semanticUiReact = require('semantic-ui-react');
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _ListEntities = require('./ListEntities');
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+var _ListEntities2 = _interopRequireDefault(_ListEntities);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
 // import { Link } from 'react-router-dom';
@@ -94128,36 +94180,14 @@ function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in ob
 //   entities: Array
 //   onEntityClick: (id: number)
 
-var ListEntities = function ListEntities(_ref) {
-	var rest = _objectWithoutProperties(_ref, []),
+
+var SelectOrdersButton = function SelectOrdersButton(_ref) {
+	var selectEntitiesInOrders = _ref.selectEntitiesInOrders,
+	    orders = _ref.orders,
+	    isFetching = _ref.isFetching,
 	    entities = _ref.entities,
-	    name = _ref.name;
-
-	// name - свойство объекта, которое будет отображаться в списке.
-	var listEntities = [].concat(_toConsumableArray(entities)).reduce(function (arrayItems, entity) {
-		var entityOption = {
-			value: entity.id,
-			key: entity.id,
-			text: entity[name]
-		};
-		console.log(entity[name]);
-		arrayItems.push(entityOption);
-
-		return arrayItems;
-	}, []);
-
-	return _react2.default.createElement(_semanticUiReact.Dropdown, _extends({}, rest, {
-		fluid: true, multiple: true, search: true, selection: true,
-		options: listEntities
-	}));
-};
-var SelectOrdersButton = function SelectOrdersButton(_ref2) {
-	var selectEntitiesInOrders = _ref2.selectEntitiesInOrders,
-	    orders = _ref2.orders,
-	    isFetching = _ref2.isFetching,
-	    entities = _ref2.entities,
-	    selectNeededOrders = _ref2.selectNeededOrders,
-	    rest = _objectWithoutProperties(_ref2, ['selectEntitiesInOrders', 'orders', 'isFetching', 'entities', 'selectNeededOrders']);
+	    selectNeededOrders = _ref.selectNeededOrders,
+	    rest = _objectWithoutProperties(_ref, ['selectEntitiesInOrders', 'orders', 'isFetching', 'entities', 'selectNeededOrders']);
 
 	return _react2.default.createElement(_semanticUiReact.Button, _extends({}, rest, {
 		loading: isFetching,
@@ -94168,8 +94198,8 @@ var SelectOrdersButton = function SelectOrdersButton(_ref2) {
 	}));
 };
 
-var ListSelectOrdersButtons = function ListSelectOrdersButtons(_ref3) {
-	var rest = _objectWithoutProperties(_ref3, []);
+var ListSelectOrdersButtons = function ListSelectOrdersButtons(_ref2) {
+	var rest = _objectWithoutProperties(_ref2, []);
 
 	return _react2.default.createElement(
 		'div',
@@ -94189,30 +94219,29 @@ var ListSelectOrdersButtons = function ListSelectOrdersButtons(_ref3) {
 	);
 };
 
-var Orders = function Orders(_ref4) {
-	var selectedOrders = _ref4.selectedOrders,
-	    selectedEntities = _ref4.selectedEntities,
-	    entities = _ref4.entities,
-	    isFetching = _ref4.isFetching,
-	    lastUpdated = _ref4.lastUpdated,
-	    dispatch = _ref4.dispatch,
-	    selectEntitiesInOrders = _ref4.selectEntitiesInOrders,
-	    selectNeededOrders = _ref4.selectNeededOrders;
+var Orders = function Orders(_ref3) {
+	var selectedOrders = _ref3.selectedOrders,
+	    selectedEntities = _ref3.selectedEntities,
+	    entities = _ref3.entities,
+	    isFetching = _ref3.isFetching,
+	    lastUpdated = _ref3.lastUpdated,
+	    dispatch = _ref3.dispatch,
+	    selectEntitiesInOrders = _ref3.selectEntitiesInOrders,
+	    selectNeededOrders = _ref3.selectNeededOrders;
 
 	console.log(selectedOrders);
-	console.log(entities[selectedOrders]);
+	console.log(_extends({}, entities[selectedOrders]), 'test spread entities');
 
 	var listOrders = {};
-	// const arrEntities = ;
 	switch (selectedOrders) {
 		case 'events':
-			listOrders = _react2.default.createElement(ListEntities, { name: 'event_name',
+			listOrders = _react2.default.createElement(_ListEntities2.default, { name: 'event_name',
 				entities: _extends({}, entities[selectedOrders]),
 				placeholder: '\u0412\u044B\u0431\u0435\u0440\u0435\u0442\u0435 \u043C\u0435\u0440\u043E\u043F\u0440\u0438\u044F\u0442\u0438\u0435'
 			});
 			break;
 		case 'adventures':
-			listOrders = _react2.default.createElement(ListEntities, { name: 'adventure_number',
+			listOrders = _react2.default.createElement(_ListEntities2.default, { name: 'adventure_number',
 				entities: _extends({}, entities[selectedOrders]),
 				placeholder: '\u0412\u044B\u0431\u0435\u0440\u0435\u0442\u0435 \u0442\u0443\u0440-\u043F\u0443\u0442\u0435\u0448\u0435\u0441\u0442\u0432\u0438\u0435'
 			});
@@ -94248,7 +94277,7 @@ var Orders = function Orders(_ref4) {
 
 exports.default = Orders;
 
-},{"react":1030,"react-fade-in":964,"semantic-ui-react":1235}],1353:[function(require,module,exports){
+},{"./ListEntities":1349,"react":1030,"react-fade-in":964,"semantic-ui-react":1235}],1354:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94267,7 +94296,7 @@ var VisibilityFilters = exports.VisibilityFilters = {
 	SHOW_ACTIVE: 'SHOW_ACTIVE'
 };
 
-},{}],1354:[function(require,module,exports){
+},{}],1355:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94310,8 +94339,6 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var entitiesCounter = 0;
-
 var App = function (_Component) {
 	_inherits(App, _Component);
 
@@ -94329,28 +94356,24 @@ var App = function (_Component) {
 			    selectedOrders = _props.selectedOrders,
 			    dispatch = _props.dispatch;
 
-
 			dispatch((0, _OrderActions.fetchEntitiesIfNeeded)(selectedOrders, 'events'));
 		}
 	}, {
 		key: 'componentWillReceiveProps',
 		value: function componentWillReceiveProps(nextProps) {
 			if (nextProps.selectedOrders !== this.props.selectedOrders) {
-				var _props2 = this.props,
-				    entities = _props2.entities,
-				    selectedOrders = _props2.selectedOrders,
-				    dispatch = _props2.dispatch;
+				// const { entities, selectedOrders, dispatch } = this.props;
+				// switch (nextProps.selectedOrders) {
+				// 	case 'events':
+				// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
+				// 	case 'adventures':
+				// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'adventures'));			
+				// 		break;
+				// 	default:
+				// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
+				// 		break;
+				// }
 
-				switch (nextProps.selectedOrders) {
-					case 'composedEvents':
-						dispatch((0, _OrderActions.fetchEntitiesIfNeeded)(selectedOrders, 'events'));
-					case 'componedAdvatures':
-						dispatch((0, _OrderActions.fetchEntitiesIfNeeded)(selectedOrders, 'adventures'));
-						break;
-					default:
-						dispatch((0, _OrderActions.fetchEntitiesIfNeeded)(selectedOrders, 'events'));
-						break;
-				}
 			}
 		}
 	}, {
@@ -94414,7 +94437,7 @@ var mapStateToProps = function mapStateToProps(state) {
 
 exports.default = (0, _reactRouterDom.withRouter)((0, _reactRedux.connect)(mapStateToProps)(App));
 
-},{"./../actions/OrderActions.js":1348,"./Footer":1355,"./Header":1356,"./Main":1357,"prop-types":834,"react":1030,"react-redux":974,"react-router-dom":991}],1355:[function(require,module,exports){
+},{"./../actions/OrderActions.js":1348,"./Footer":1356,"./Header":1357,"./Main":1358,"prop-types":834,"react":1030,"react-redux":974,"react-router-dom":991}],1356:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94485,7 +94508,7 @@ var Footer = function Footer() {
 
 exports.default = Footer;
 
-},{"react":1030,"semantic-ui-react":1235}],1356:[function(require,module,exports){
+},{"react":1030,"semantic-ui-react":1235}],1357:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94520,7 +94543,7 @@ var Header = function Header() {
 
 exports.default = Header;
 
-},{"./../components/Logo":1349,"./../components/Navigation":1350,"react":1030}],1357:[function(require,module,exports){
+},{"./../components/Logo":1350,"./../components/Navigation":1351,"react":1030}],1358:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94629,7 +94652,7 @@ var Main = function Main(_ref2) {
 
 exports.default = Main;
 
-},{"./../components/NotFound":1351,"./OrdersContainer":1358,"react":1030,"react-fade-in":964,"react-router-dom":991}],1358:[function(require,module,exports){
+},{"./../components/NotFound":1352,"./OrdersContainer":1359,"react":1030,"react-fade-in":964,"react-router-dom":991}],1359:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94753,7 +94776,7 @@ var mapStateToProps = function mapStateToProps(state) {
 
 exports.default = (0, _reactRedux.connect)(mapStateToProps)(OrdersContainer);
 
-},{"./../actions/OrderActions.js":1348,"./../components/Orders":1352,"prop-types":834,"react":1030,"react-redux":974,"react-router-dom":991}],1359:[function(require,module,exports){
+},{"./../actions/OrderActions.js":1348,"./../components/Orders":1353,"prop-types":834,"react":1030,"react-redux":974,"react-router-dom":991}],1360:[function(require,module,exports){
 'use strict';
 
 $(window).resize(function () {
@@ -94790,7 +94813,7 @@ $(function () {
   }); // end click
 }); // end ready
 
-},{}],1360:[function(require,module,exports){
+},{}],1361:[function(require,module,exports){
 'use strict';
 
 var _react = require('react');
@@ -94825,7 +94848,7 @@ var store = (0, _configureStore2.default)();
   )
 ), document.getElementById('root'));
 
-},{"./containers/App":1354,"./store/configureStore.js":1365,"react":1030,"react-dom":836,"react-redux":974,"react-router-dom":991}],1361:[function(require,module,exports){
+},{"./containers/App":1355,"./store/configureStore.js":1366,"react":1030,"react-dom":836,"react-redux":974,"react-router-dom":991}],1362:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94840,7 +94863,7 @@ var connect_form = {
 
 exports.default = connect_form;
 
-},{"redux-form":1087}],1362:[function(require,module,exports){
+},{"redux-form":1087}],1363:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94870,7 +94893,7 @@ var rootReducer = (0, _redux.combineReducers)({
 
 exports.default = rootReducer;
 
-},{"./connect_form.js":1361,"./order.js":1363,"./visibilityFilter.js":1364,"redux":1130}],1363:[function(require,module,exports){
+},{"./connect_form.js":1362,"./order.js":1364,"./visibilityFilter.js":1365,"redux":1130}],1364:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -95052,7 +95075,7 @@ var ordersByData = exports.ordersByData = function ordersByData() {
 // 	}
 // }
 
-},{"./../actions/OrderActions.js":1348,"./../constants/actionTypes.js":1353}],1364:[function(require,module,exports){
+},{"./../actions/OrderActions.js":1348,"./../constants/actionTypes.js":1354}],1365:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -95075,7 +95098,7 @@ var visibilityFilter = function visibilityFilter() {
 
 exports.default = visibilityFilter;
 
-},{"./../constants/actionTypes.js":1353}],1365:[function(require,module,exports){
+},{"./../constants/actionTypes.js":1354}],1366:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -95103,7 +95126,7 @@ function configureStore(initialState) {
   return store;
 }
 
-},{"../reducers/index.js":1362,"redux":1130,"redux-thunk":1124}],1366:[function(require,module,exports){
+},{"../reducers/index.js":1363,"redux":1130,"redux-thunk":1124}],1367:[function(require,module,exports){
 'use strict';
 
 require('jquery');
@@ -95118,6 +95141,6 @@ require('./../blocks/custom/custom.js');
 
 require('./../blocks/index.js');
 
-},{"./../blocks/custom/custom.js":1359,"./../blocks/index.js":1360,"babel-polyfill":1,"bootstrap-sass":24,"jquery":474,"whatwg-fetch":1347}]},{},[1366])
+},{"./../blocks/custom/custom.js":1360,"./../blocks/index.js":1361,"babel-polyfill":1,"bootstrap-sass":24,"jquery":474,"whatwg-fetch":1347}]},{},[1367])
 
 //# sourceMappingURL=main.js.map
