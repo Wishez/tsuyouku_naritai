@@ -3,40 +3,48 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import Orders from './../components/Orders';
-import { selectOrders, fetchEntitiesIfNeeded } from './../actions/OrderActions.js';
+import { 
+	selectEntities,
+	fetchEntitiesIfNeeded,
+	selectEntity,
+	invalidateEntities 
+} from './../actions/EntitiesActions.js';
+import { entitiesPattern } from './../constants/entities.js';
 
 class OrdersContainer extends Component {
 	static PropTypes = {
-		selectedOrders: PropTypes.string.isRequired,
-		selectedEntities: PropTypes.object.isRequired,
+		selectByEntity: PropTypes.object.isRequired,
+		selectedEntities: PropTypes.string.isRequired,
 		entities: PropTypes.object.isRequired,
 		isFetching: PropTypes.bool.isRequired,
 		lastUpdated: PropTypes.number,
 		dispatch: PropTypes.func.isRequired	
 	};
+	componentDidMount() {
+		const { selectedEntities, dispatch } = this.props;
 
-	handleChangeEntity = (entity, id) => {
+		dispatch(fetchEntitiesIfNeeded(selectedEntities));
+	}
 
+	selectNeededEntity = (entity, id) => {
+		const { dispatch }  = this.props;
+		dispatch(selectEntity(entity, id));
 	};
 
-	selectEntitiesInOrders = (orders, entities) => {
-		const { dispatch }  = this.props;
-		// console.log(this.props.selectedOrders);
-		dispatch(fetchEntitiesIfNeeded(orders, entities));		
-	};
-	selectNeededOrders = orders => {
-
+	selectAndUpdateEntities = entities => {
 		const { dispatch }  = this.props;
 
-		dispatch(selectOrders(orders));
+		dispatch(invalidateEntities());
+		// Выбранные сущности обновляются внутри.
+		dispatch(fetchEntitiesIfNeeded(entities));		
 	};
 
 	render () {
 		return (
 			<Orders {...this.props}
-				selectEntitiesInOrders={this.selectEntitiesInOrders}
+				selectNeededEntity={this.selectNeededEntity}
 				fetchEntities={this.fetchEntities}
-				selectNeededOrders={this.selectNeededOrders}
+				selectAndUpdateEntities={this.selectAndUpdateEntities}
 			/>
 		);	
 	}
@@ -44,37 +52,57 @@ class OrdersContainer extends Component {
 
 const mapStateToProps = state => {
 	const { 
-		selectedOrders,
+		selectByEntity,
 		selectedEntities,
-		ordersByData
+		entities
 	} = state;
+
+	const {
+		employers,
+		customers,
+		artists,
+		places,
+		contractors,
+		visa,
+		events,
+		adventures,
+		partners,
+		halls,
+		barters
+	} = entities;
+
+	const loadedEntities = {
+		employers: {...employers},
+		customers: {...customers},
+		artists: {...artists},
+		places: {...places},
+		contractors: {...contractors},
+		visa: {...visa},
+		events: {...events},
+		adventures: {...adventures},
+		partners: {...partners},
+		halls: {...halls},
+		barters: {...barters}
+	};
+
 	const {
 		isFetching,
-		lastUpdated,
-		entities
-	} = ordersByData[selectedOrders] || {
+		lastUpdated
+	} = entities || {
 		isFetching: true,
-		entities: {
-			employers: {},
-			customers: {},
-			artists: {},
-			places: {},
-			contractors: {},
-			visa: {},
-			events: {},
-			adventures: {},
-			partners: {},
-			halls: {}
+		loadedEntities: {
+			...entitiesPattern
 		}
-	}
+	};
+
 	console.log(state);
 	return {
-		selectedOrders,
+		selectByEntity,
 		selectedEntities,
 		isFetching,
-		entities,
+		loadedEntities,
 		lastUpdated
 	}
 };
 
-export default connect(mapStateToProps)(OrdersContainer);
+export default withRouter(connect(mapStateToProps)(OrdersContainer));

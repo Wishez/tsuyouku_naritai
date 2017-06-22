@@ -5,41 +5,19 @@ import Main from './Main';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
-import { fetchEntitiesIfNeeded } from './../actions/OrderActions.js';  
+import { fetchEntitiesIfNeeded } from './../actions/EntitiesActions.js';  
 
 
 class App extends Component {
 	static PropTypes = {
-		selectedOrders: PropTypes.string.isRequired,
-		selectedEntities: PropTypes.object.isRequired,
-		entities: PropTypes.object.isRequired,
-		isFetching: PropTypes.bool.isRequired,
-		lastUpdated: PropTypes.number,
+		selectedEntities: PropTypes.string.isRequired,
 		dispatch: PropTypes.func.isRequired	
 	};
 
 	componentDidMount() {
-		const { entities, selectedOrders, dispatch } = this.props;
-		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
-		
-	}
+		const { selectedEntities, dispatch } = this.props;
 
-	componentWillReceiveProps(nextProps) {
-		if (nextProps.selectedOrders !== this.props.selectedOrders){
-			// const { entities, selectedOrders, dispatch } = this.props;
-			// switch (nextProps.selectedOrders) {
-			// 	case 'events':
-			// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
-			// 	case 'adventures':
-			// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'adventures'));			
-			// 		break;
-			// 	default:
-			// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
-			// 		break;
-			// }
-			
-		}
-
+		dispatch(fetchEntitiesIfNeeded(selectedEntities));
 	}
 
 	render() {
@@ -54,39 +32,9 @@ class App extends Component {
 }
 
 const mapStateToProps = state => {
-	const {
-		selectedOrders,
-		selectedEntities,
-		ordersByData
-	} = state;
+	const { selectedEntities } = state;
 
-	const {
-		isFetching,
-		lastUpdated,
-		entities  
-	} = ordersByData[selectedOrders] || {
-		isFetching: true,
-		entities: {
-			employers: {},
-			customers: {},
-			artists: {},
-			places: {},
-			contractors: {},
-			visa: {},
-			events: {},
-			adventures: {},
-			partners: {},
-			halls: {}
-		}
-	};
-
-	return {
-		selectedOrders,
-		selectedEntities,
-		entities,
-		isFetching,
-		lastUpdated
-	};
+	return { selectedEntities };
 };
 
 

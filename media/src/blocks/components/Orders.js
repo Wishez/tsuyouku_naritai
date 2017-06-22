@@ -1,99 +1,60 @@
 import React, { Component } from 'react';
 import FadeIn from 'react-fade-in';
-// import { Link } from 'react-router-dom';
-import { Dropdown, Button } from 'semantic-ui-react';
 import ListEntities from './ListEntities';
-// Events
-	// completedEvents: object
-	// customers: object
-	// artists: object
-	// places: object
-	// halls: object(for places) 
-	// employers: object
-	// 
-// ListEntities is list with entities are below.
-//   entities: Array
-//   onEntityClick: (id: number)
-// Customer
-// 	  customer: Object
-// Artist
-// 	  artist: Object
-// Employer
-// 	  employer: Object
-// Place
-// 	  place: Object
-// Hall
-// 	  hall: Object
-// Visa
-// 	  visa: Object
-// CustomersList is list with cutomers. Differance is in checkboxes(later)
-//   entities: Array
-//   onEntityClick: (id: number)
+import ListSelectEntitiesButtons from './ListSelectEntitiesButtons';
+/* Plan:
+Events
+	completedEvents: object
+	customers: object
+	artists: object
+	places: object
+	halls: object(for places) 
+	employers: object
+	
+ListEntities is list with entities are below.
+  entities: Array
+  onEntityClick: (id: number)
+Customer
+	  customer: Object
+Artist
+	  artist: Object
+Employer
+	  employer: Object
+Place
+	  place: Object
+Hall
+	  hall: Object
+Visa
+	  visa: Object
+CustomersList is list with cutomers. Differance is in checkboxes(later)
+  entities: Array
+  onEntityClick: (id: number) */
 
-
-const SelectOrdersButton = ({
- 	selectEntitiesInOrders,
- 	orders,
- 	isFetching,
- 	entities,
- 	selectNeededOrders,
- 	...rest
-}) => (
-	<Button 
-		{...rest}
-		loading={isFetching}
-		onClick={() => {
-			selectEntitiesInOrders(orders, entities);
-			selectNeededOrders(orders);
-		}}
-	/>
-); 
-
-const ListSelectOrdersButtons = ({...rest}) => (
-	<div>
-		<SelectOrdersButton content='Заказанные мероприятия'
-		    orders='events'
-		    color='grey'
-		    size='medium'
-		    entities='events'
-		    {...rest}
-		/>
-		<SelectOrdersButton content='Заказанные тур-путешествия'
-		    orders='adventures'
-		    color='grey'
-		    size='medium'
-		    entities='adventures'
-		    {...rest}
-		/>
-	</div>
-);
 
 const Orders = ({
-		selectedOrders,
 		selectedEntities,
-		entities,
+		loadedEntities,
 		isFetching,
 		lastUpdated,
 		dispatch,
-		selectEntitiesInOrders,
-		selectNeededOrders
+		updateEntities,
+		selectAndUpdateEntities,
+		selectNeededEntity
 }) => {
-	console.log(selectedOrders);
-	console.log({...entities[selectedOrders]},'test spread entities');
+	console.log(loadedEntities);
 
-	let listOrders = {};
-	switch (selectedOrders) {
+	let listMetaData = {
+		placeholder: '',
+		name: ''
+	};
+	switch (selectedEntities) {
 		case 'events':
-			listOrders =  <ListEntities name='event_name'
-				entities={{...entities[selectedOrders]}}
-				placeholder='Выберете мероприятие'
-			/>;
+			listMetaData.placeholder = 'Выберете мероприятие';
+			listMetaData.name = 'event_name';
 			break;
 		case 'adventures':
-			listOrders = <ListEntities name='adventure_number'
-				entities={{...entities[selectedOrders]}}
-				placeholder='Выберете тур-путешествие'
-			/>;
+			listMetaData.name = 'adventure_number';
+			listMetaData.placeholder = 'Выберете тур-путешествие';
 			break;
 		default:
 			break;
@@ -111,11 +72,12 @@ const Orders = ({
 					})}
 				</small> 
 			</div>
-			<ListSelectOrdersButtons selectEntitiesInOrders={selectEntitiesInOrders}
-				isFetching={isFetching}
-				selectNeededOrders={selectNeededOrders}
+			<ListSelectEntitiesButtons isFetching={isFetching}
+				selectAndUpdateEntities={selectAndUpdateEntities}
+				
 			/>
-			{listOrders}
+			<ListEntities {...listMetaData}
+				entities={{...loadedEntities[selectedEntities]}} />
 		</FadeIn>
 	);
 }

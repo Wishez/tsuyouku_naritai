@@ -93649,13 +93649,15 @@ module.exports = warning;
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.fetchEntitiesIfNeeded = exports.receiveOrders = exports.requestOrders = exports.invalidateOrders = exports.selectOrders = exports.selectEntity = undefined;
+exports.fetchEntitiesIfNeeded = exports.invalidateEntities = exports.selectEntities = exports.selectEntity = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _actionTypes = require('./../constants/actionTypes.js');
 
 var _reduxActions = require('redux-actions');
+
+var _entities = require('./../constants/entities.js');
 
 var _expect = require('expect');
 
@@ -93665,123 +93667,153 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-// export const selectOrders = createAction(
-// 	SELECT_ORDERS,
-// 	orders => orders
-// );
-var selectEntity = exports.selectEntity = function selectEntity(entity, index) {
+// Выбор сущности, которую нужно отобразить.
+var selectEntity = exports.selectEntity = function selectEntity(entity, id) {
 	return {
 		type: _actionTypes.SELECT_ENTITY,
 		entity: entity,
-		id: index
-	};
-};
-var selectOrders = exports.selectOrders = function selectOrders(orders) {
-	return {
-		type: _actionTypes.SELECT_ORDERS,
-		orders: orders
+		id: id
 	};
 };
 
-var testSelectOrders = function testSelectOrders() {
-	var stateAfter = {
-		type: _actionTypes.SELECT_ORDERS,
-		orders: 'events'
+// Выбор сущности, которые будут отображаться в списке.
+var selectEntities = exports.selectEntities = function selectEntities(entities) {
+	return {
+		type: _actionTypes.SELECT_ENTITIES,
+		entities: entities
 	};
-	(0, _expect2.default)(selectOrders('events')).toEqual(stateAfter);
-	console.log('testSelectOrders=>true');
 };
 
-var invalidateOrders = exports.invalidateOrders = function invalidateOrders(orders) {
+var invalidateEntities = exports.invalidateEntities = function invalidateEntities() {
 	return {
-		type: _actionTypes.SELECT_ORDERS,
-		orders: orders
-	};
-};
-// export const invalidateOrders = createAction(
-// 	INVALIDATE_ORDERS,
-// 	orders => orders
-// );
-var testInvalidateOrders = function testInvalidateOrders() {
-	var stateAfter = {
-		type: _actionTypes.SELECT_ORDERS,
-		orders: 'events'
-	};
-	(0, _expect2.default)(invalidateOrders('events')).toEqual(stateAfter);
-	console.log('testInvalidateOrders=>true');
-};
-
-var requestOrders = exports.requestOrders = function requestOrders(orders) {
-	return {
-		type: _actionTypes.REQUEST_ORDERS,
-		orders: orders
+		type: _actionTypes.INVALIDATE_ENTITIES
 	};
 };
 
 // Компонуем действие для обработки состояние обработчиком состояния
-var receiveOrders = exports.receiveOrders = function receiveOrders(orders, orderEntities, json) {
+var receiveEntities = function receiveEntities(entities, json) {
 	return {
-		type: _actionTypes.RECEIVE_ORDERS,
-		orders: orders,
-		orderEntities: orderEntities,
-		items: json.reduce(function (accumulatedData, data) {
-			return _extends({}, accumulatedData, _defineProperty({}, data.id, data));
-		}, {}),
+		type: _actionTypes.RECEIVE_ENTITIES,
+		entities: entities,
 		receivedAt: Date.now()
 	};
 };
+
+var requestEntities = function requestEntities() {
+	return {
+		type: _actionTypes.REQUEST_ENTITIES
+	};
+};
+
+var extractEntities = function extractEntities(entities) {
+	return entities.reduce(function (accumulatedData, data) {
+		return _extends({}, accumulatedData, _defineProperty({}, data.id, data)) // return updated accumulatedData
+		;
+	}, {} // end reduce
+	);
+};
+
+var makeStateEntitiesAndDispatch = function makeStateEntitiesAndDispatch(state, dispatch) {
+	var stateEntites = _extends({}, state);
+	// Извлекаем каждый ключ из состояния существ.
+	var keys = Object.keys(stateEntites);
+	console.log(keys, 'array of entities');
+	var i = 0;
+	// Универсальная функция получающая ключи,
+	// компонующая состояние и перенаправляющая компоновонное
+	// состояние в обработчик состояния.
+	var fetchMakeDispatchEntities = function fetchMakeDispatchEntities(entitiesKeys, i) {
+		console.log(entitiesKeys[i], 'key');
+		// Проврка на необходимость дальше самовызываться.
+		// Базис рекурсии.
+		if (!entitiesKeys[i]) {
+			// Перенаправляем в обработчик состояния.
+			return dispatch(receiveEntities(stateEntites));
+		}
+
+		return fetch('/api/v0/' + entitiesKeys[i] + '/').then(function (response) {
+			return response.json();
+		}
+		// Отправляем их через диспатчер к обработчику состояния
+		).then(function (json) {
+			// Извлекаем данные и присваиваем их по ключу объекту с сущностями.
+			stateEntites[entitiesKeys[i]] = extractEntities(json);
+			// Вызываю ещё раз для того, чтобы запросить следующие сущности.
+			fetchMakeDispatchEntities(entitiesKeys, i += 1);
+		});
+	};
+	// Запускаю универсальную функцию.
+	return fetchMakeDispatchEntities(keys, i);
+};
 // Заказываем данные с сервера.
-var fetchEntities = function fetchEntities(orders, entities) {
+var fetchEntities = function fetchEntities(entities) {
 	return function (dispatch) {
 		// Показываем загрузку. 
 		// requestOrders компонует действие, с определённым типом заказов
 		// сменяя в обработчие закзов(reudcer-e) состояние этих заказов
-		dispatch(selectOrders(orders));
-		dispatch(requestOrders(orders));
-		// Запрашиваем нужные сущности.
-		return fetch('/api/v0/' + entities + '/').then(function (respond) {
-			return respond.json();
+		dispatch(requestEntities(entities));
+
+		// При первой загрузки, когда выбранные сущности не установленны
+		// Загружаются все данные.
+		if (!entities) {
+			// Устанавливается состояние выбранных заказов на 'events' по умолчанию.
+			dispatch(selectEntities('events'));
+			// Заполняемые данными сущности.
+			var newStateEntites = _extends({}, _entities.entitiesPattern);
+			// Запрашиваем все данные, компонуем состояние и устанавливаем его
+			// через обработчик состояния.
+			return makeStateEntitiesAndDispatch(newStateEntites, dispatch);
+		} else {
+			// Выбираем сущности.
+			dispatch(selectEntities(entities));
+			// Делаем единичный запрос к данным.
+			return fetch('/api/v0/' + entities + '/').then(function (response) {
+				return response.json();
+			}).then(function (json) {
+
+				// Отправляем данные в обработчик состояние.
+				// Этот объект распыляется внутри состояния
+				// и заменяет устаревшие данные.
+				dispatch(receiveEntities(_defineProperty({}, entities, extractEntities(json))));
+			});
 		}
-		// Отправляем их через диспатчер к обработчику состояния
-		).then(function (json) {
-			// if (json.length !== 0)
-			dispatch(receiveOrders(orders, entities, json));
-		});
 	};
 };
 
-var shouldFetchEntities = function shouldFetchEntities(state, orders, entities) {
+var shouldFetchEntities = function shouldFetchEntities(state, entities) {
 	// Проверяем существующий тип заказа
-	var ordersType = state.ordersByData[orders];
 	// Также определённые сущности внутри типа заказа.
 	// Если типа заказа нет, то нужно получить его!
-	var stateEntities = ordersType ? ordersType.entities[entities] : false;
-	// Если нет сущности внутри типа, получаем их.
-	if (!stateEntities) return true;
+	var _state$entities = state.entities,
+	    isFetching = _state$entities.isFetching,
+	    didInvalidate = _state$entities.didInvalidate;
+	// Загруженны ли данные?
+
+	if (!state.entities[entities]) return true;
 	// Сущности не нужно запрашивать, посколько они уже запрошенны
 	// и обрабатываются обработчиком состояния.
-	if (ordersType.isFetching) return false;
+	if (isFetching) return false;
 	// Елси же ничего из того, что выше не подошло
 	// значит их нужно либо обновить, либо нет.
 	// didInvalidate - переменная управляемая обработчиком
 	// события клика для обновления данных. 
-	return ordersType.didInvalidate;
+	return didInvalidate;
 };
 
-var fetchEntitiesIfNeeded = exports.fetchEntitiesIfNeeded = function fetchEntitiesIfNeeded(orders, entities) {
+var fetchEntitiesIfNeeded = exports.fetchEntitiesIfNeeded = function fetchEntitiesIfNeeded(entities) {
 	return function (dispatch, getState) {
 		// Делаем проверку существующих или нет сущностей в состояние.
 		// Запрашиваем то, что нужно.
-		if (shouldFetchEntities(getState(), orders, entities)) {
-			return dispatch(fetchEntities(orders, entities));
+		if (shouldFetchEntities(getState(), entities)) {
+			return dispatch(fetchEntities(entities));
 		} else {
-			// Возвращает управление компоненту, чтобы сменить значение в фильтре заказов.
+			// Возвращает управление компоненту.
 			return false;
 		}
 	};
 };
 
-},{"./../constants/actionTypes.js":1354,"expect":422,"redux-actions":1039}],1349:[function(require,module,exports){
+},{"./../constants/actionTypes.js":1356,"./../constants/entities.js":1357,"expect":422,"redux-actions":1039}],1349:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -93829,6 +93861,62 @@ var ListEntities = function ListEntities(_ref) {
 exports.default = ListEntities;
 
 },{"react":1030,"semantic-ui-react":1235}],1350:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _SelectEntitiesButton = require('./SelectEntitiesButton');
+
+var _SelectEntitiesButton2 = _interopRequireDefault(_SelectEntitiesButton);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+var ListSelectEntitiesButtons = function ListSelectEntitiesButtons(_ref) {
+	var rest = _objectWithoutProperties(_ref, []);
+
+	return _react2.default.createElement(
+		'div',
+		null,
+		_react2.default.createElement(_SelectEntitiesButton2.default, _extends({}, rest, {
+			content: '\u0417\u0430\u043A\u0430\u0437\u0430\u043D\u043D\u044B\u0435 \u043C\u0435\u0440\u043E\u043F\u0440\u0438\u044F\u0442\u0438\u044F',
+			color: 'grey',
+			size: 'medium',
+			entities: 'events'
+		})),
+		_react2.default.createElement(_SelectEntitiesButton2.default, _extends({}, rest, {
+			content: '\u0417\u0430\u043A\u0430\u0437\u0430\u043D\u043D\u044B\u0435 \u0442\u0443\u0440-\u043F\u0443\u0442\u0435\u0448\u0435\u0441\u0442\u0432\u0438\u044F',
+			color: 'grey',
+			size: 'medium',
+			entities: 'adventures'
+		})),
+		_react2.default.createElement(_SelectEntitiesButton2.default, _extends({}, rest, {
+			content: '\u0421\u043F\u0438\u0441\u043E\u043A \u0410\u0440\u0442\u0438\u0441\u0442\u043E\u0432',
+			color: 'grey',
+			size: 'medium',
+			entities: 'artists'
+		})),
+		_react2.default.createElement(_SelectEntitiesButton2.default, _extends({}, rest, {
+			content: '\u0421\u043F\u0438\u0441\u043E\u043A \u041A\u043B\u0438\u0435\u043D\u0442\u043E\u0432',
+			color: 'grey',
+			size: 'medium',
+			entities: 'customers'
+		}))
+	);
+};
+
+exports.default = ListSelectEntitiesButtons;
+
+},{"./SelectEntitiesButton":1355,"react":1030}],1351:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -93885,7 +93973,7 @@ var Header = function (_Component) {
 
 exports.default = Header;
 
-},{"react":1030}],1351:[function(require,module,exports){
+},{"react":1030}],1352:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94088,7 +94176,7 @@ var Navigation = function (_Component) {
 
 exports.default = Navigation;
 
-},{"classnames":26,"react":1030,"react-router-dom":991,"semantic-ui-react":1235}],1352:[function(require,module,exports){
+},{"classnames":26,"react":1030,"react-router-dom":991,"semantic-ui-react":1235}],1353:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94124,7 +94212,7 @@ var NotFound = function NotFound() {
 
 exports.default = NotFound;
 
-},{"react":1030}],1353:[function(require,module,exports){
+},{"react":1030}],1354:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94141,110 +94229,68 @@ var _reactFadeIn = require('react-fade-in');
 
 var _reactFadeIn2 = _interopRequireDefault(_reactFadeIn);
 
-var _semanticUiReact = require('semantic-ui-react');
-
 var _ListEntities = require('./ListEntities');
 
 var _ListEntities2 = _interopRequireDefault(_ListEntities);
 
+var _ListSelectEntitiesButtons = require('./ListSelectEntitiesButtons');
+
+var _ListSelectEntitiesButtons2 = _interopRequireDefault(_ListSelectEntitiesButtons);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
-// import { Link } from 'react-router-dom';
+/* Plan:
+Events
+	completedEvents: object
+	customers: object
+	artists: object
+	places: object
+	halls: object(for places) 
+	employers: object
+	
+ListEntities is list with entities are below.
+  entities: Array
+  onEntityClick: (id: number)
+Customer
+	  customer: Object
+Artist
+	  artist: Object
+Employer
+	  employer: Object
+Place
+	  place: Object
+Hall
+	  hall: Object
+Visa
+	  visa: Object
+CustomersList is list with cutomers. Differance is in checkboxes(later)
+  entities: Array
+  onEntityClick: (id: number) */
 
-
-// Events
-// completedEvents: object
-// customers: object
-// artists: object
-// places: object
-// halls: object(for places) 
-// employers: object
-// 
-// ListEntities is list with entities are below.
-//   entities: Array
-//   onEntityClick: (id: number)
-// Customer
-// 	  customer: Object
-// Artist
-// 	  artist: Object
-// Employer
-// 	  employer: Object
-// Place
-// 	  place: Object
-// Hall
-// 	  hall: Object
-// Visa
-// 	  visa: Object
-// CustomersList is list with cutomers. Differance is in checkboxes(later)
-//   entities: Array
-//   onEntityClick: (id: number)
-
-
-var SelectOrdersButton = function SelectOrdersButton(_ref) {
-	var selectEntitiesInOrders = _ref.selectEntitiesInOrders,
-	    orders = _ref.orders,
+var Orders = function Orders(_ref) {
+	var selectedEntities = _ref.selectedEntities,
+	    loadedEntities = _ref.loadedEntities,
 	    isFetching = _ref.isFetching,
-	    entities = _ref.entities,
-	    selectNeededOrders = _ref.selectNeededOrders,
-	    rest = _objectWithoutProperties(_ref, ['selectEntitiesInOrders', 'orders', 'isFetching', 'entities', 'selectNeededOrders']);
+	    lastUpdated = _ref.lastUpdated,
+	    dispatch = _ref.dispatch,
+	    updateEntities = _ref.updateEntities,
+	    selectAndUpdateEntities = _ref.selectAndUpdateEntities,
+	    selectNeededEntity = _ref.selectNeededEntity;
 
-	return _react2.default.createElement(_semanticUiReact.Button, _extends({}, rest, {
-		loading: isFetching,
-		onClick: function onClick() {
-			selectEntitiesInOrders(orders, entities);
-			selectNeededOrders(orders);
-		}
-	}));
-};
+	console.log(loadedEntities);
 
-var ListSelectOrdersButtons = function ListSelectOrdersButtons(_ref2) {
-	var rest = _objectWithoutProperties(_ref2, []);
-
-	return _react2.default.createElement(
-		'div',
-		null,
-		_react2.default.createElement(SelectOrdersButton, _extends({ content: '\u0417\u0430\u043A\u0430\u0437\u0430\u043D\u043D\u044B\u0435 \u043C\u0435\u0440\u043E\u043F\u0440\u0438\u044F\u0442\u0438\u044F',
-			orders: 'events',
-			color: 'grey',
-			size: 'medium',
-			entities: 'events'
-		}, rest)),
-		_react2.default.createElement(SelectOrdersButton, _extends({ content: '\u0417\u0430\u043A\u0430\u0437\u0430\u043D\u043D\u044B\u0435 \u0442\u0443\u0440-\u043F\u0443\u0442\u0435\u0448\u0435\u0441\u0442\u0432\u0438\u044F',
-			orders: 'adventures',
-			color: 'grey',
-			size: 'medium',
-			entities: 'adventures'
-		}, rest))
-	);
-};
-
-var Orders = function Orders(_ref3) {
-	var selectedOrders = _ref3.selectedOrders,
-	    selectedEntities = _ref3.selectedEntities,
-	    entities = _ref3.entities,
-	    isFetching = _ref3.isFetching,
-	    lastUpdated = _ref3.lastUpdated,
-	    dispatch = _ref3.dispatch,
-	    selectEntitiesInOrders = _ref3.selectEntitiesInOrders,
-	    selectNeededOrders = _ref3.selectNeededOrders;
-
-	console.log(selectedOrders);
-	console.log(_extends({}, entities[selectedOrders]), 'test spread entities');
-
-	var listOrders = {};
-	switch (selectedOrders) {
+	var listMetaData = {
+		placeholder: '',
+		name: ''
+	};
+	switch (selectedEntities) {
 		case 'events':
-			listOrders = _react2.default.createElement(_ListEntities2.default, { name: 'event_name',
-				entities: _extends({}, entities[selectedOrders]),
-				placeholder: '\u0412\u044B\u0431\u0435\u0440\u0435\u0442\u0435 \u043C\u0435\u0440\u043E\u043F\u0440\u0438\u044F\u0442\u0438\u0435'
-			});
+			listMetaData.placeholder = 'Выберете мероприятие';
+			listMetaData.name = 'event_name';
 			break;
 		case 'adventures':
-			listOrders = _react2.default.createElement(_ListEntities2.default, { name: 'adventure_number',
-				entities: _extends({}, entities[selectedOrders]),
-				placeholder: '\u0412\u044B\u0431\u0435\u0440\u0435\u0442\u0435 \u0442\u0443\u0440-\u043F\u0443\u0442\u0435\u0448\u0435\u0441\u0442\u0432\u0438\u0435'
-			});
+			listMetaData.name = 'adventure_number';
+			listMetaData.placeholder = 'Выберете тур-путешествие';
 			break;
 		default:
 			break;
@@ -94267,17 +94313,54 @@ var Orders = function Orders(_ref3) {
 				})
 			)
 		),
-		_react2.default.createElement(ListSelectOrdersButtons, { selectEntitiesInOrders: selectEntitiesInOrders,
-			isFetching: isFetching,
-			selectNeededOrders: selectNeededOrders
+		_react2.default.createElement(_ListSelectEntitiesButtons2.default, { isFetching: isFetching,
+			selectAndUpdateEntities: selectAndUpdateEntities
+
 		}),
-		listOrders
+		_react2.default.createElement(_ListEntities2.default, _extends({}, listMetaData, {
+			entities: _extends({}, loadedEntities[selectedEntities]) }))
 	);
 };
 
 exports.default = Orders;
 
-},{"./ListEntities":1349,"react":1030,"react-fade-in":964,"semantic-ui-react":1235}],1354:[function(require,module,exports){
+},{"./ListEntities":1349,"./ListSelectEntitiesButtons":1350,"react":1030,"react-fade-in":964}],1355:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _react = require('react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _semanticUiReact = require('semantic-ui-react');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
+var SelectEntitiesButton = function SelectEntitiesButton(_ref) {
+	var isFetching = _ref.isFetching,
+	    entities = _ref.entities,
+	    selectAndUpdateEntities = _ref.selectAndUpdateEntities,
+	    updateEntities = _ref.updateEntities,
+	    rest = _objectWithoutProperties(_ref, ['isFetching', 'entities', 'selectAndUpdateEntities', 'updateEntities']);
+
+	return _react2.default.createElement(_semanticUiReact.Button, _extends({}, rest, {
+		loading: isFetching,
+		onClick: function onClick() {
+			selectAndUpdateEntities(entities);
+		}
+	}));
+};
+
+exports.default = SelectEntitiesButton;
+
+},{"react":1030,"semantic-ui-react":1235}],1356:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94286,17 +94369,50 @@ Object.defineProperty(exports, "__esModule", {
 //- order
 var SET_VISIBILITY_FILTER = exports.SET_VISIBILITY_FILTER = 'SET_VISIBILITY_FILTER';
 var SELECT_ENTITY = exports.SELECT_ENTITY = 'SELECT_ENTITY';
-var SELECT_ORDERS = exports.SELECT_ORDERS = 'SELECT_ORDERS';
-var REQUEST_ORDERS = exports.REQUEST_ORDERS = 'REQUEST_ORDERS';
-var RECEIVE_ORDERS = exports.RECEIVE_ORDERS = 'RECEIVE_ORDERS';
-var INVALIDATE_ORDERS = exports.INVALIDATE_ORDERS = 'INVALIDATE_ORDERS';
+var SELECT_ENTITIES = exports.SELECT_ENTITIES = 'SELECT_ENTITIES';
+var REQUEST_ENTITIES = exports.REQUEST_ENTITIES = 'REQUEST_ENTITIES';
+var RECEIVE_ENTITIES = exports.RECEIVE_ENTITIES = 'RECEIVE_ENTITIES';
+var INVALIDATE_ENTITIES = exports.INVALIDATE_ENTITIES = 'INVALIDATE_ENTITIES';
 var VisibilityFilters = exports.VisibilityFilters = {
 	SHOW_ALL: 'SHOW_ALL',
 	SHOW_COMPLETED: 'SHOW_COMPLETED',
 	SHOW_ACTIVE: 'SHOW_ACTIVE'
 };
 
-},{}],1355:[function(require,module,exports){
+},{}],1357:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+var entitiesChoices = exports.entitiesChoices = {
+	employers: 'employers',
+	customers: 'customers',
+	artists: 'artists',
+	places: 'places',
+	contractors: 'contractors',
+	visa: 'visa',
+	events: 'events',
+	adventures: 'adventures',
+	partners: 'partners',
+	halls: 'halls',
+	barters: 'barters'
+};
+// 
+var entitiesPattern = exports.entitiesPattern = {
+	customers: {},
+	artists: {},
+	places: {},
+	halls: {},
+	contractors: {},
+	visa: {},
+	events: {},
+	adventures: {},
+	partners: {},
+	barters: {}
+};
+
+},{}],1358:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94329,7 +94445,7 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 
 var _reactRouterDom = require('react-router-dom');
 
-var _OrderActions = require('./../actions/OrderActions.js');
+var _EntitiesActions = require('./../actions/EntitiesActions.js');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -94352,29 +94468,11 @@ var App = function (_Component) {
 		key: 'componentDidMount',
 		value: function componentDidMount() {
 			var _props = this.props,
-			    entities = _props.entities,
-			    selectedOrders = _props.selectedOrders,
+			    selectedEntities = _props.selectedEntities,
 			    dispatch = _props.dispatch;
 
-			dispatch((0, _OrderActions.fetchEntitiesIfNeeded)(selectedOrders, 'events'));
-		}
-	}, {
-		key: 'componentWillReceiveProps',
-		value: function componentWillReceiveProps(nextProps) {
-			if (nextProps.selectedOrders !== this.props.selectedOrders) {
-				// const { entities, selectedOrders, dispatch } = this.props;
-				// switch (nextProps.selectedOrders) {
-				// 	case 'events':
-				// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
-				// 	case 'adventures':
-				// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'adventures'));			
-				// 		break;
-				// 	default:
-				// 		dispatch(fetchEntitiesIfNeeded(selectedOrders, 'events'));
-				// 		break;
-				// }
 
-			}
+			dispatch((0, _EntitiesActions.fetchEntitiesIfNeeded)(selectedEntities));
 		}
 	}, {
 		key: 'render',
@@ -94393,51 +94491,21 @@ var App = function (_Component) {
 }(_react.Component);
 
 App.PropTypes = {
-	selectedOrders: _propTypes2.default.string.isRequired,
-	selectedEntities: _propTypes2.default.object.isRequired,
-	entities: _propTypes2.default.object.isRequired,
-	isFetching: _propTypes2.default.bool.isRequired,
-	lastUpdated: _propTypes2.default.number,
+	selectedEntities: _propTypes2.default.string.isRequired,
 	dispatch: _propTypes2.default.func.isRequired
 };
 
 
 var mapStateToProps = function mapStateToProps(state) {
-	var selectedOrders = state.selectedOrders,
-	    selectedEntities = state.selectedEntities,
-	    ordersByData = state.ordersByData;
+	var selectedEntities = state.selectedEntities;
 
-	var _ref = ordersByData[selectedOrders] || {
-		isFetching: true,
-		entities: {
-			employers: {},
-			customers: {},
-			artists: {},
-			places: {},
-			contractors: {},
-			visa: {},
-			events: {},
-			adventures: {},
-			partners: {},
-			halls: {}
-		}
-	},
-	    isFetching = _ref.isFetching,
-	    lastUpdated = _ref.lastUpdated,
-	    entities = _ref.entities;
 
-	return {
-		selectedOrders: selectedOrders,
-		selectedEntities: selectedEntities,
-		entities: entities,
-		isFetching: isFetching,
-		lastUpdated: lastUpdated
-	};
+	return { selectedEntities: selectedEntities };
 };
 
 exports.default = (0, _reactRouterDom.withRouter)((0, _reactRedux.connect)(mapStateToProps)(App));
 
-},{"./../actions/OrderActions.js":1348,"./Footer":1356,"./Header":1357,"./Main":1358,"prop-types":834,"react":1030,"react-redux":974,"react-router-dom":991}],1356:[function(require,module,exports){
+},{"./../actions/EntitiesActions.js":1348,"./Footer":1359,"./Header":1360,"./Main":1361,"prop-types":834,"react":1030,"react-redux":974,"react-router-dom":991}],1359:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94508,7 +94576,7 @@ var Footer = function Footer() {
 
 exports.default = Footer;
 
-},{"react":1030,"semantic-ui-react":1235}],1357:[function(require,module,exports){
+},{"react":1030,"semantic-ui-react":1235}],1360:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94543,7 +94611,7 @@ var Header = function Header() {
 
 exports.default = Header;
 
-},{"./../components/Logo":1350,"./../components/Navigation":1351,"react":1030}],1358:[function(require,module,exports){
+},{"./../components/Logo":1351,"./../components/Navigation":1352,"react":1030}],1361:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94652,7 +94720,7 @@ var Main = function Main(_ref2) {
 
 exports.default = Main;
 
-},{"./../components/NotFound":1352,"./OrdersContainer":1359,"react":1030,"react-fade-in":964,"react-router-dom":991}],1359:[function(require,module,exports){
+},{"./../components/NotFound":1353,"./OrdersContainer":1362,"react":1030,"react-fade-in":964,"react-router-dom":991}],1362:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94679,7 +94747,9 @@ var _Orders = require('./../components/Orders');
 
 var _Orders2 = _interopRequireDefault(_Orders);
 
-var _OrderActions = require('./../actions/OrderActions.js');
+var _EntitiesActions = require('./../actions/EntitiesActions.js');
+
+var _entities = require('./../constants/entities.js');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -94703,26 +94773,37 @@ var OrdersContainer = function (_Component) {
 			args[_key] = arguments[_key];
 		}
 
-		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = OrdersContainer.__proto__ || Object.getPrototypeOf(OrdersContainer)).call.apply(_ref, [this].concat(args))), _this), _this.handleChangeEntity = function (entity, id) {}, _this.selectEntitiesInOrders = function (orders, entities) {
-			var dispatch = _this.props.dispatch;
-			// console.log(this.props.selectedOrders);
-
-			dispatch((0, _OrderActions.fetchEntitiesIfNeeded)(orders, entities));
-		}, _this.selectNeededOrders = function (orders) {
+		return _ret = (_temp = (_this = _possibleConstructorReturn(this, (_ref = OrdersContainer.__proto__ || Object.getPrototypeOf(OrdersContainer)).call.apply(_ref, [this].concat(args))), _this), _this.selectNeededEntity = function (entity, id) {
 			var dispatch = _this.props.dispatch;
 
+			dispatch((0, _EntitiesActions.selectEntity)(entity, id));
+		}, _this.selectAndUpdateEntities = function (entities) {
+			var dispatch = _this.props.dispatch;
 
-			dispatch((0, _OrderActions.selectOrders)(orders));
+
+			dispatch((0, _EntitiesActions.invalidateEntities)());
+			// Выбранные сущности обновляются внутри.
+			dispatch((0, _EntitiesActions.fetchEntitiesIfNeeded)(entities));
 		}, _temp), _possibleConstructorReturn(_this, _ret);
 	}
 
 	_createClass(OrdersContainer, [{
+		key: 'componentDidMount',
+		value: function componentDidMount() {
+			var _props = this.props,
+			    selectedEntities = _props.selectedEntities,
+			    dispatch = _props.dispatch;
+
+
+			dispatch((0, _EntitiesActions.fetchEntitiesIfNeeded)(selectedEntities));
+		}
+	}, {
 		key: 'render',
 		value: function render() {
 			return _react2.default.createElement(_Orders2.default, _extends({}, this.props, {
-				selectEntitiesInOrders: this.selectEntitiesInOrders,
+				selectNeededEntity: this.selectNeededEntity,
 				fetchEntities: this.fetchEntities,
-				selectNeededOrders: this.selectNeededOrders
+				selectAndUpdateEntities: this.selectAndUpdateEntities
 			}));
 		}
 	}]);
@@ -94731,8 +94812,8 @@ var OrdersContainer = function (_Component) {
 }(_react.Component);
 
 OrdersContainer.PropTypes = {
-	selectedOrders: _propTypes2.default.string.isRequired,
-	selectedEntities: _propTypes2.default.object.isRequired,
+	selectByEntity: _propTypes2.default.object.isRequired,
+	selectedEntities: _propTypes2.default.string.isRequired,
 	entities: _propTypes2.default.object.isRequired,
 	isFetching: _propTypes2.default.bool.isRequired,
 	lastUpdated: _propTypes2.default.number,
@@ -94741,42 +94822,56 @@ OrdersContainer.PropTypes = {
 
 
 var mapStateToProps = function mapStateToProps(state) {
-	var selectedOrders = state.selectedOrders,
+	var selectByEntity = state.selectByEntity,
 	    selectedEntities = state.selectedEntities,
-	    ordersByData = state.ordersByData;
+	    entities = state.entities;
+	var employers = entities.employers,
+	    customers = entities.customers,
+	    artists = entities.artists,
+	    places = entities.places,
+	    contractors = entities.contractors,
+	    visa = entities.visa,
+	    events = entities.events,
+	    adventures = entities.adventures,
+	    partners = entities.partners,
+	    halls = entities.halls,
+	    barters = entities.barters;
 
-	var _ref2 = ordersByData[selectedOrders] || {
+
+	var loadedEntities = {
+		employers: _extends({}, employers),
+		customers: _extends({}, customers),
+		artists: _extends({}, artists),
+		places: _extends({}, places),
+		contractors: _extends({}, contractors),
+		visa: _extends({}, visa),
+		events: _extends({}, events),
+		adventures: _extends({}, adventures),
+		partners: _extends({}, partners),
+		halls: _extends({}, halls),
+		barters: _extends({}, barters)
+	};
+
+	var _ref2 = entities || {
 		isFetching: true,
-		entities: {
-			employers: {},
-			customers: {},
-			artists: {},
-			places: {},
-			contractors: {},
-			visa: {},
-			events: {},
-			adventures: {},
-			partners: {},
-			halls: {}
-		}
+		loadedEntities: _extends({}, _entities.entitiesPattern)
 	},
 	    isFetching = _ref2.isFetching,
-	    lastUpdated = _ref2.lastUpdated,
-	    entities = _ref2.entities;
+	    lastUpdated = _ref2.lastUpdated;
 
 	console.log(state);
 	return {
-		selectedOrders: selectedOrders,
+		selectByEntity: selectByEntity,
 		selectedEntities: selectedEntities,
 		isFetching: isFetching,
-		entities: entities,
+		loadedEntities: loadedEntities,
 		lastUpdated: lastUpdated
 	};
 };
 
-exports.default = (0, _reactRedux.connect)(mapStateToProps)(OrdersContainer);
+exports.default = (0, _reactRouterDom.withRouter)((0, _reactRedux.connect)(mapStateToProps)(OrdersContainer));
 
-},{"./../actions/OrderActions.js":1348,"./../components/Orders":1353,"prop-types":834,"react":1030,"react-redux":974,"react-router-dom":991}],1360:[function(require,module,exports){
+},{"./../actions/EntitiesActions.js":1348,"./../components/Orders":1354,"./../constants/entities.js":1357,"prop-types":834,"react":1030,"react-redux":974,"react-router-dom":991}],1363:[function(require,module,exports){
 'use strict';
 
 $(window).resize(function () {
@@ -94813,7 +94908,7 @@ $(function () {
   }); // end click
 }); // end ready
 
-},{}],1361:[function(require,module,exports){
+},{}],1364:[function(require,module,exports){
 'use strict';
 
 var _react = require('react');
@@ -94848,7 +94943,7 @@ var store = (0, _configureStore2.default)();
   )
 ), document.getElementById('root'));
 
-},{"./containers/App":1355,"./store/configureStore.js":1366,"react":1030,"react-dom":836,"react-redux":974,"react-router-dom":991}],1362:[function(require,module,exports){
+},{"./containers/App":1358,"./store/configureStore.js":1371,"react":1030,"react-dom":836,"react-redux":974,"react-router-dom":991}],1365:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -94863,154 +94958,100 @@ var connect_form = {
 
 exports.default = connect_form;
 
-},{"redux-form":1087}],1363:[function(require,module,exports){
+},{"redux-form":1087}],1366:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-
-var _redux = require('redux');
-
-var _connect_form = require('./connect_form.js');
-
-var _connect_form2 = _interopRequireDefault(_connect_form);
-
-var _visibilityFilter = require('./visibilityFilter.js');
-
-var _visibilityFilter2 = _interopRequireDefault(_visibilityFilter);
-
-var _order = require('./order.js');
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var rootReducer = (0, _redux.combineReducers)({
-	connect_form: _connect_form2.default,
-	selectedOrders: _order.selectedOrders,
-	ordersByData: _order.ordersByData,
-	selectedEntities: _order.selectedEntities
-});
-
-exports.default = rootReducer;
-
-},{"./connect_form.js":1362,"./order.js":1364,"./visibilityFilter.js":1365,"redux":1130}],1364:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.ordersByData = exports.selectedEntities = exports.selectedOrders = exports.orders = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _actionTypes = require('./../constants/actionTypes.js');
 
-var _OrderActions = require('./../actions/OrderActions.js');
+var _entities = require('./../constants/entities.js');
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-var initState = {
-	isFetching: false,
-	didInvalidate: false,
-	entities: {
-		employers: {},
-		customers: {},
-		artists: {},
-		places: {},
-		contractors: {},
-		visa: {},
-		events: {},
-		adventures: {},
-		partners: {},
-		halls: {}
-	}
-};
-// Обработчик состояния заказов
-var orders = exports.orders = function orders() {
-	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : initState;
+var entitiesState = _extends({}, _entities.entitiesPattern);
+var entities = function entities() {
+	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : entitiesState;
 	var action = arguments[1];
 
 	switch (action.type) {
-		case _actionTypes.INVALIDATE_ORDERS:
+		case _actionTypes.INVALIDATE_ENTITIES:
 			return _extends({}, state, {
 				didInvalidate: true
 			});
-		case _actionTypes.REQUEST_ORDERS:
+		case _actionTypes.REQUEST_ENTITIES:
 			return _extends({}, state, {
 				isFetching: true,
 				didInvalidate: false
 			});
-		case _actionTypes.RECEIVE_ORDERS:
-			console.log(action.orderEntities);
-			console.log(action.items);
+		case _actionTypes.RECEIVE_ENTITIES:
 			return _extends({}, state, {
 				isFetching: false,
 				didInvalidate: false,
-				entities: _extends({}, state.entities, _defineProperty({}, action.orderEntities, action.items)),
 				lastUpdated: action.receivedAt
-			});
+			}, action.entities);
 		default:
 			return state;
 	}
 };
-// Фильтер для смены заказов.
-// 2 types of orders
-// 1: events
-// 2: adventures
-var selectedOrders = exports.selectedOrders = function selectedOrders() {
-	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'events';
-	var action = arguments[1];
 
-	switch (action.type) {
-		case _actionTypes.SELECT_ORDERS:
-			return action.orders;
-		default:
-			return state;
-	}
-};
-// Фильтер для отображения определенных сущностей.
+exports.default = entities;
+// Обработчик состояния заказов
+// const initState = {
+// 	isFetching: false,
+// 	didInvalidate: false
+// };
+// const orders = (
+// 	state = initState,
+// 	action
+// ) => {
+// 	switch (action.type) {
+// 		case INVALIDATE_ORDERS:
+// 			return {
+// 				...state,
+// 				didInvalidate: true
+// 			};
+// 		case REQUEST_ORDERS:
+// 			return {
+// 				...state,
+// 				isFetching: true,
+// 				didInvalidate: false
+// 			};
+// 		case RECEIVE_ORDERS:
+// 			return {
+// 				...state,
+// 				isFetching: false,
+// 				didInvalidate: false,
+// 				lastUpdated: action.receivedAt
+// 			};
+// 		default:
+// 			return state;
+// 	}
+// };
 
-var filterInitState = {
-	employers: null,
-	customers: null,
-	artists: null,
-	places: null,
-	contractors: null,
-	visa: null,
-	events: null,
-	adventures: null,
-	partners: null,
-	halls: null
-};
-
-var selectedEntities = exports.selectedEntities = function selectedEntities() {
-	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : filterInitState;
-	var action = arguments[1];
-
-	switch (action.type) {
-		case _actionTypes.SELECT_ENTITY:
-			return _extends({}, state, _defineProperty({}, action.entity, action.id));
-		default:
-			return state;
-	}
-};
 // Фильтер для извлечения одной сущности
 // ...
 // Есть два типа данных готовые заказы и не готовые заказы,
 // путешествий и мероприятий
-var ordersByData = exports.ordersByData = function ordersByData() {
-	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	var action = arguments[1];
-
-	switch (action.type) {
-		case _actionTypes.SELECT_ORDERS:
-		case _actionTypes.REQUEST_ORDERS:
-		case _actionTypes.RECEIVE_ORDERS:
-			return _extends({}, state, _defineProperty({}, action.orders, orders(state[action.orders], action)));
-		default:
-			return state;
-	}
-};
+// export const entitiesByData = (
+// 	state = {},
+// 	action
+// ) => {
+// 	switch (action.type) {
+// 		case SELECT_ORDERS:
+// 		case REQUEST_ORDERS:
+// 		case RECEIVE_ORDERS:
+// 			return {
+// 				...state,
+// 				// Запаковываю в хранилище заказы с относящимися к ним сущностями.
+// 				...entities(state, action)
+// 			}
+// 		default:
+// 			return state;
+// 	}
+// };
 
 // export const selectedSubreddit = (
 // 	state = 'reactjs',
@@ -95075,7 +95116,125 @@ var ordersByData = exports.ordersByData = function ordersByData() {
 // 	}
 // }
 
-},{"./../actions/OrderActions.js":1348,"./../constants/actionTypes.js":1354}],1365:[function(require,module,exports){
+},{"./../constants/actionTypes.js":1356,"./../constants/entities.js":1357}],1367:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _redux = require('redux');
+
+var _connect_form = require('./connect_form.js');
+
+var _connect_form2 = _interopRequireDefault(_connect_form);
+
+var _visibilityFilter = require('./visibilityFilter.js');
+
+var _visibilityFilter2 = _interopRequireDefault(_visibilityFilter);
+
+var _selectedEntities = require('./selectedEntities');
+
+var _selectedEntities2 = _interopRequireDefault(_selectedEntities);
+
+var _entities = require('./entities');
+
+var _entities2 = _interopRequireDefault(_entities);
+
+var _selectByEntity = require('./selectByEntity');
+
+var _selectByEntity2 = _interopRequireDefault(_selectByEntity);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var rootReducer = (0, _redux.combineReducers)({
+	connect_form: _connect_form2.default,
+	selectedEntities: _selectedEntities2.default,
+	entities: _entities2.default,
+	selectByEntity: _selectByEntity2.default
+});
+
+exports.default = rootReducer;
+
+},{"./connect_form.js":1365,"./entities":1366,"./selectByEntity":1368,"./selectedEntities":1369,"./visibilityFilter.js":1370,"redux":1130}],1368:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _actionTypes = require('./../constants/actionTypes.js');
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var selectByEntityInitState = {
+	employer: null,
+	customer: null,
+	artist: null,
+	place: null,
+	contractor: null,
+	visa: null,
+	event: null,
+	adventure: null,
+	partner: null,
+	hall: null
+};
+// Здесь будут выбранные сущности из списка сузности 
+// для отображения единичной сущности.
+var selectByEntity = function selectByEntity() {
+	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : selectByEntityInitState;
+	var action = arguments[1];
+
+	switch (action.type) {
+		case _actionTypes.SELECT_ENTITY:
+			return _extends({}, state, _defineProperty({}, action.entity, action.id));
+		default:
+			return state;
+	}
+};
+
+exports.default = selectByEntity;
+
+},{"./../constants/actionTypes.js":1356}],1369:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _actionTypes = require('./../constants/actionTypes.js');
+
+/* Фильтер для смены заказов.
+types of entities
+1: events
+2: adventures
+3: employers
+4: customers
+5: artists
+6: places
+7: contractors
+8: visa
+9: partners
+10: halls
+11: barters */
+// По умолчанию ничего не выбрано, потому что нет данных, которые следует выбирать.
+var selectedEntities = function selectedEntities() {
+	var state = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+	var action = arguments[1];
+
+	switch (action.type) {
+		case _actionTypes.SELECT_ENTITIES:
+			return action.entities;
+		default:
+			return state;
+	}
+};
+
+exports.default = selectedEntities;
+
+},{"./../constants/actionTypes.js":1356}],1370:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -95098,7 +95257,7 @@ var visibilityFilter = function visibilityFilter() {
 
 exports.default = visibilityFilter;
 
-},{"./../constants/actionTypes.js":1354}],1366:[function(require,module,exports){
+},{"./../constants/actionTypes.js":1356}],1371:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -95126,7 +95285,7 @@ function configureStore(initialState) {
   return store;
 }
 
-},{"../reducers/index.js":1363,"redux":1130,"redux-thunk":1124}],1367:[function(require,module,exports){
+},{"../reducers/index.js":1367,"redux":1130,"redux-thunk":1124}],1372:[function(require,module,exports){
 'use strict';
 
 require('jquery');
@@ -95141,6 +95300,6 @@ require('./../blocks/custom/custom.js');
 
 require('./../blocks/index.js');
 
-},{"./../blocks/custom/custom.js":1360,"./../blocks/index.js":1361,"babel-polyfill":1,"bootstrap-sass":24,"jquery":474,"whatwg-fetch":1347}]},{},[1367])
+},{"./../blocks/custom/custom.js":1363,"./../blocks/index.js":1364,"babel-polyfill":1,"bootstrap-sass":24,"jquery":474,"whatwg-fetch":1347}]},{},[1372])
 
 //# sourceMappingURL=main.js.map

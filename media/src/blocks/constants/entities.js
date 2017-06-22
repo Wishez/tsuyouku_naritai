@@ -1,4 +1,4 @@
-export const etities = {
+export const entitiesChoices = {
 	employers: 'employers',
 	customers: 'customers',
 	artists: 'artists',
@@ -8,5 +8,19 @@ export const etities = {
 	events: 'events',
 	adventures: 'adventures',
 	partners: 'partners',
-	halls: 'halls'
+	halls: 'halls',
+	barters: 'barters'
+};
+// 
+export const entitiesPattern =  {
+	customers: {},
+	artists: {},
+	places: {},
+	halls: {},
+	contractors: {},
+	visa: {},
+	events: {},
+	adventures: {},
+	partners: {},
+	barters: {}
 };
